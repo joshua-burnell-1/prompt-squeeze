@@ -1,0 +1,40 @@
+# ABOUTME: Project metadata and dependencies for prompt-squeeze (skill + plugin).
+# ABOUTME: Runtime is Python 3.12; anthropic SDK + tiktoken for token counting; pytest for tests.
+
+[project]
+name = "prompt-squeeze"
+version = "0.1.0"
+description = "Builds prompt-cost discipline into Claude Code — measure, surface, report."
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "Apache-2.0" }
+authors = [{ name = "Josh Burnell" }]
+dependencies = [
+    "anthropic>=0.40.0",
+    "mcp>=1.2.0",
+    "jsonschema>=4.21.0",
+    "tiktoken>=0.7.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "ruff>=0.6.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = [".", "skills/prompt-squeeze"]
+addopts = "-q --strict-markers"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+# UP017 prefers `datetime.UTC` over `timezone.utc`, but UTC is 3.11+. B905 wants
+# `zip(..., strict=...)` which is 3.10+. The hook must run on macOS system
+# Python 3.9, so we keep the 3.9-compatible forms.
+ignore = ["E501", "UP017", "B905"]

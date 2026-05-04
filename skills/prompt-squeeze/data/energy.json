@@ -1,0 +1,8 @@
+{
+  "default_joules_per_token": 0.39,
+  "source": "https://euromlsys.eu/pdf/euromlsys25-27.pdf",
+  "grid_kg_co2_per_kwh": 0.40,
+  "grid_source": "https://www.eia.gov/tools/faqs/faq.php?id=74",
+  "caveat": "0.39 J/token is the modern H100, batch-128 floor. Production figures vary 3-10x with batch size, sequence length, and hardware mix.",
+  "_last_verified": "2026-05-03"
+}

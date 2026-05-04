@@ -1,0 +1,31 @@
+# ABOUTME: Standard Python ignore + Claude Code workspace artifacts.
+# ABOUTME: Never commit .env, prompt logs, or virtualenvs.
+
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+env/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.egg-info/
+dist/
+build/
+
+.env
+.env.local
+*.log
+
+~/.claude/prompt-squeeze/
+.claude-prompt-squeeze-test/
+log.jsonl
+
+.DS_Store
+.idea/
+.vscode/

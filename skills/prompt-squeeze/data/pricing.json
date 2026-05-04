@@ -1,0 +1,10 @@
+{
+  "claude-haiku-4-5":  { "input_per_mtok": 1.00, "output_per_mtok": 5.00 },
+  "claude-sonnet-4-6": { "input_per_mtok": 3.00, "output_per_mtok": 15.00 },
+  "claude-opus-4-6":   { "input_per_mtok": 5.00, "output_per_mtok": 25.00 },
+  "claude-opus-4-7":   { "input_per_mtok": 5.00, "output_per_mtok": 25.00, "tokenizer_inflation": 1.35 },
+  "gpt-4o":            { "input_per_mtok": 2.50, "output_per_mtok": 10.00 },
+  "gemini-2.5-pro":    { "input_per_mtok": 1.25, "output_per_mtok": 10.00 },
+  "_source":           "https://platform.claude.com/docs/en/about-claude/pricing",
+  "_last_verified":    "2026-05-03"
+}

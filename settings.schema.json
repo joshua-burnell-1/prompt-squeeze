@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "prompt-squeeze settings",
+  "type": "object",
+  "properties": {
+    "prompt-squeeze.mode": {
+      "type": "string",
+      "enum": ["off", "measure", "advise", "replace"],
+      "default": "advise"
+    },
+    "prompt-squeeze.warn_threshold": { "type": "integer", "minimum": 0, "default": 800 },
+    "prompt-squeeze.notify_threshold": { "type": "number", "minimum": 0, "maximum": 1, "default": 0.25 },
+    "prompt-squeeze.hard_limit": { "type": "integer", "minimum": 0, "default": 4000 },
+    "prompt-squeeze.interactive": { "type": "boolean", "default": false },
+    "prompt-squeeze.model_override": { "type": ["string", "null"], "default": null },
+    "prompt-squeeze.telemetry": { "type": "string", "enum": ["local", "team", "off"], "default": "local" },
+    "prompt-squeeze.team_endpoint": { "type": ["string", "null"], "default": null }
+  },
+  "additionalProperties": false
+}
