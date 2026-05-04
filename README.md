@@ -16,19 +16,24 @@ The framing is prompt literacy plus visibility plus sustainability: write tighte
 
 ## Install
 
-From a Claude Code plugin marketplace:
+From inside Claude Code:
 
 ```
-/plugin install prompt-squeeze
+/plugin marketplace add joshua-burnell-1/claude-plugins
+/plugin install prompt-squeeze@joshua-burnell-1
 ```
 
-Private GitHub install (until the marketplace listing ships):
+Then start a fresh `claude` session — the `UserPromptSubmit` hook registers at session start.
 
-```
-/plugin install joshua-burnell-1/prompt-squeeze
-```
+### Runtime requirements
 
-The plugin's MCP server runs locally and requires Python 3.12 with `tiktoken` and `mcp` installed (handled by `uv sync` in development; the installed plugin pins them via its own environment).
+The hook runs with whatever `python3` is on your `PATH` and degrades gracefully:
+
+- `tiktoken` if available for accurate cl100k token counts; falls back to a `len(text.split()) * 1.3` approximation otherwise.
+- The skill's compress + estimate scripts use stdlib only (no external deps required at runtime).
+- The MCP rollup server requires the `mcp` Python package — install with `pip install mcp` if you want the `/squeeze-stats` and weekly report tools.
+
+For development (eval harness, judge, tests), use `uv sync --extra dev` from the repo root.
 
 ## Usage
 
