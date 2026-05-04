@@ -2,6 +2,8 @@
 <!-- ABOUTME: Documents what the plugin does, install paths, settings, privacy, and platform constraints. -->
 # prompt-squeeze
 
+[![ci](https://github.com/joshua-burnell-1/prompt-squeeze/actions/workflows/ci.yml/badge.svg)](https://github.com/joshua-burnell-1/prompt-squeeze/actions/workflows/ci.yml) [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](./LICENSE)
+
 A Claude Code plugin that measures every prompt you send, surfaces avoidable spend, and reports cumulative dollar/Wh savings across a session, a project, or a team. Pairs a deterministic compression skill with a `UserPromptSubmit` hook and an MCP rollup so cost and sustainability stay visible without leaving the editor.
 
 ## Why
