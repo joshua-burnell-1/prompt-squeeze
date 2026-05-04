@@ -1,6 +1,6 @@
 {
   "name": "prompt-squeeze",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Builds prompt-cost discipline into Claude Code: measure every prompt, surface avoidable spend, report org-wide. Skill + hook + MCP rollup with cited dollar/Wh/CO2e receipts.",
   "author": { "name": "Josh Burnell" },
   "homepage": "https://github.com/joshua-burnell-1/prompt-squeeze",
