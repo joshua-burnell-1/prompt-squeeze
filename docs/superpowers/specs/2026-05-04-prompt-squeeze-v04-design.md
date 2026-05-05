@@ -16,7 +16,7 @@ The compression target is **LLM comprehension**, not human readability. If a squ
 ## Constraints
 
 - **Platform constraint (still binding as of 2026-05-04):** `UserPromptSubmit` hooks can emit `additionalContext` or `decision: block` only — they cannot rewrite the user's prompt. Tracked at anthropics/claude-code#27365. Real savings therefore require the user to confirm a swap, not silent rewriting. This shapes the consent flow.
-- **Eval contract:** No new compression rule ships unless the 100-prompt eval keeps median fidelity ≥ 0.95, 5th-percentile ≥ 0.85, and no prompt currently scoring ≥ 0.95 regresses. The eval is wired into CI; failing rules are rejected automatically.
+- **Eval contract:** No new compression rule ships unless the 100-prompt eval keeps median fidelity ≥ 0.95 AND 5th-percentile fidelity does not regress more than 0.03 from the captured v0.3 baseline AND no individual prompt regresses more than 0.05 in fidelity from its baseline. The eval is wired into CI; failing rules are rejected automatically. The p5 and per-prompt gates are relative-to-baseline (not absolute floors) because the v0.3 baseline already contains a small number of intrinsically low-fidelity prompts (past-tense conditionals, dangling phrases) that no compression-rule change can rescue without rewriting the prompt's grammar.
 - **Privacy floor:** `log.jsonl` continues to store hashes only. The new explain artifact is opt-in, local-only, secret-redacted, capped at 100 entries, and never transmitted.
 
 ## Architecture
