@@ -3,7 +3,7 @@
 
 [project]
 name = "prompt-squeeze"
-version = "0.1.0"
+version = "0.3.3"
 description = "Builds prompt-cost discipline into Claude Code — measure, surface, report."
 readme = "README.md"
 requires-python = ">=3.12"

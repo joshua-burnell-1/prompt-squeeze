@@ -94,6 +94,19 @@ As of May 2026, Claude Code's `UserPromptSubmit` hook can add context but cannot
 
 The energy figure is a floor; production deployments vary 3-10x depending on batch size, sequence length, and hardware mix. The receipt cites the methodology so reviewers can recompute against their own numbers.
 
+## Changelog
+
+### 0.3.3 (2026-05-05)
+
+- **Compression layer rewrite:** rules now live in a typed `Rule` registry with stable IDs (`skills/prompt-squeeze/scripts/rules.py`), setting up `/sq explain` rule attribution in v0.4
+- **Bug fix:** `for the purpose of` is now context-gated — only swaps to `to` when followed by a verb-ing form, fixing the v0.3 0.72-fidelity outlier (`explain_03`)
+- **Bug fix:** post-strip capitalization — sentences whose head was dropped by filler removal are re-capitalized (with iOS-safe lookahead so camelCase identifiers stay intact)
+- **New aggressive rules** (all eval-gated, drop only when fidelity contract holds): expanded politeness ("if you have a moment", "sorry to bother you"), verbose connectors ("with respect to", "in terms of", "as a matter of fact"), redundant qualifiers ("very", "really", "actually", "basically"), imperative collapse ("I would like you to" → drop), narrow article dropping ("The function" → "Function" at sentence start)
+- **Rule composition fixes:** patterns now consume trailing `you might/could/would (be able to)` and `if you <verb>` to avoid wrong-subject sentence heads after stripping
+- **Eval contract enforced in CI:** median fidelity ≥ 0.95, 5th-percentile within 0.03 of v0.3 baseline, no individual prompt regresses more than 0.05. Any rule that breaks the gate is rejected automatically.
+
+Default behavior is unchanged — the hook still operates in advise mode. v0.4 (next release) will flip the default to interactive blocking for realized savings.
+
 ## License
 
 Apache-2.0. Copyright 2026 Josh Burnell. See [LICENSE](./LICENSE).
