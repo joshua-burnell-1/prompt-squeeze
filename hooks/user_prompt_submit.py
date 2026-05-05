@@ -162,6 +162,15 @@ def _write_log(row: dict, telemetry: str) -> None:
             fh.write(json.dumps(row, separators=(",", ":")) + "\n")
     except Exception:
         return
+    # Best-effort rollup refresh so the status line stays current. Imported lazily to
+    # keep the hook fast for short prompts that don't need rollup.
+    try:
+        if str(SKILL_SCRIPTS) not in sys.path:
+            sys.path.insert(0, str(SKILL_SCRIPTS))
+        import rollup  # type: ignore
+        rollup.write_totals(LOG_PATH, LOG_DIR / "totals.json")
+    except Exception:
+        return
 
 
 def _wrap(text: str, width: int) -> list[str]:
