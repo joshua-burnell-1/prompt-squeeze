@@ -67,24 +67,47 @@ The `UserPromptSubmit` hook fires on every prompt. When your prompt clears the w
 - Setting `prompt-squeeze.telemetry` to `off` disables logging entirely.
 - Team aggregation is opt-in (`telemetry=team` plus a configured `team_endpoint`) and is not implemented in v0.1.
 
-## Settings
+## Settings (v0.4)
 
 See [`settings.schema.json`](./settings.schema.json) for the full schema. Keys live under `.claude/settings.json` in your project (or your user-level settings).
 
 | Key | Default | Notes |
 | --- | --- | --- |
-| `prompt-squeeze.mode` | `advise` | `off` disables hook; `measure` logs only; `replace` reserved for future native rewrite. |
-| `prompt-squeeze.warn_threshold` | `800` | Below this, the hook only logs. |
-| `prompt-squeeze.notify_threshold` | `0.25` | Minimum compressible fraction to emit a nudge. |
-| `prompt-squeeze.hard_limit` | `4000` | If `interactive=true`, prompts above this can be blocked. |
-| `prompt-squeeze.interactive` | `false` | Enables the block decision path. |
+| `prompt-squeeze.mode` | `interactive` | `off` disables; `advise` is v0.3 behavior (nudge only); `interactive` blocks long prompts and offers `/sq y` (v0.4 default). |
+| `prompt-squeeze.block_threshold` | `500` | v0.4: prompts above this token count are blocked in interactive mode. |
+| `prompt-squeeze.explain` | `off` | When `on`, per-squeeze artifacts are stored locally for `/sq explain` and `/sq undo`. Opt-in. |
+| `prompt-squeeze.warn_threshold` | `800` | Legacy v0.3 advise-mode threshold. Honored when `mode == "advise"`. |
+| `prompt-squeeze.notify_threshold` | `0.25` | Min compressible fraction to nudge in advise mode. |
 | `prompt-squeeze.model_override` | `null` | Force a specific model id for cost math. |
 | `prompt-squeeze.telemetry` | `local` | `local`, `team`, or `off`. |
-| `prompt-squeeze.team_endpoint` | `null` | Reserved for self-hosted team rollup (v0.2). |
+| `prompt-squeeze.team_endpoint` | `null` | Reserved for self-hosted team rollup. |
+
+## v0.4 default flow (interactive blocking)
+
+1. You type a prompt > 500 tokens.
+2. The hook blocks submission and shows a side-by-side diff with savings:
+   `prompt-squeeze: your prompt is 1,248 tokens. A compressed version saves 487 tokens (~$0.0009, ~0.31 Wh).`
+3. Reply with one of:
+   - `/sq y` — send the squeezed version once
+   - `/sq y session` — send squeezed AND auto-confirm for the rest of this session
+   - `/sq n` — send your original prompt unchanged
+   - `/sq off` — disable prompt-squeeze for the rest of this session
+4. After `/sq y session`, subsequent long prompts auto-block with a terse one-liner (`prompt-squeeze auto: 940 → 612 tok (-35%) ...`); `/sq y` confirms in one keystroke.
+5. Escape hatches: `/sq off` (disable for session) and `/sq undo` (resend last as original; requires `explain: on`).
 
 ## Platform constraint
 
-As of May 2026, Claude Code's `UserPromptSubmit` hook can add context but cannot rewrite the prompt before the model sees it (canonical issue: anthropics/claude-code#27365). The plugin therefore ships in Advisor mode: it measures every prompt and nudges Claude to either respond efficiently or recommend `/squeeze` for the next similar prompt. The `replace` mode is in the schema but inert. When Anthropic ships native prompt replacement, flipping `prompt-squeeze.mode` to `replace` will switch the hook from nudging to rewriting without further changes.
+As of May 2026, Claude Code's `UserPromptSubmit` hook can add context or block submission, but cannot silently rewrite the prompt before the model sees it (canonical issue: anthropics/claude-code#27365). v0.4's default `interactive` mode works around this: the hook blocks the long prompt, caches both the original and squeezed versions, and the user's `/sq y` slash command submits the squeezed text as the next user message. When Anthropic ships native prompt replacement, the `replace` mode in the schema becomes available and the consent flow simplifies to a one-time-only banner.
+
+## Migration from v0.3
+
+v0.4 flips the default from `advise` (nudge only) to `interactive` (block + `/sq y`). If you preferred v0.3's behavior, opt out with:
+
+```json
+{ "prompt-squeeze.mode": "advise" }
+```
+
+The v0.3 nudge path is preserved exactly — the hook continues to emit `additionalContext` recommending `/squeeze` instead of blocking.
 
 ## Methodology
 
