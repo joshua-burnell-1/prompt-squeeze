@@ -4,17 +4,18 @@
 
 [![ci](https://github.com/joshua-burnell-1/prompt-squeeze/actions/workflows/ci.yml/badge.svg)](https://github.com/joshua-burnell-1/prompt-squeeze/actions/workflows/ci.yml) [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](./LICENSE)
 
-A Claude Code plugin that measures every prompt you send, surfaces avoidable spend, and reports cumulative dollar/Wh savings across a session, a project, or a team. Pairs a deterministic compression skill with a `UserPromptSubmit` hook and an MCP rollup so cost and sustainability stay visible without leaving the editor.
+A Claude Code plugin that compresses long prompts into the bare minimum an LLM still understands, blocks bloated prompts before they ship, and reports cumulative tokens / dollars / Wh saved across a session, project, or team. Pairs an eval-gated deterministic compression skill with a `UserPromptSubmit` hook and a refill-counter-style status line so the savings stay visible without leaving the editor.
 
 ## Why
 
-Prompt cost is the cheapest engineering discipline most teams haven't built yet. The `prompt-squeeze` skill turns a prompt into a smaller, equivalent prompt with a cited receipt (dollars saved, Wh saved, CO2e at US-grid average). The plugin wraps the skill with three surfaces:
+Prompt cost is the cheapest engineering discipline most teams haven't built yet. v0.4 turns prompt-squeeze from "nudge to compress later" into "compress now or send original" — every long prompt is a one-keystroke decision (`/sq y` to send the squeezed version) instead of an unbilled-token leak. The plugin wraps the compression skill with four surfaces:
 
-- A hook that meters every prompt and nudges you toward `/squeeze` when meaningful savings exist.
-- Slash commands (`/squeeze`, `/squeeze-stats`, `/squeeze-config`) for on-demand compression, personal stats, and configuration.
-- An MCP server that aggregates the local log into weekly markdown reports.
+- A `UserPromptSubmit` hook that **blocks** prompts above a token threshold and shows you the compressed version with realized savings.
+- The `/sq` slash command suite — `/sq y`, `/sq y session`, `/sq n`, `/sq undo`, `/sq off` — to confirm or skip squeeze, opt in for the rest of a session, or opt out entirely.
+- An opt-in `/sq explain` deep-dive that shows rule-by-rule attribution for any squeeze (locally redacted, never transmitted).
+- A status-line counter that compounds your savings across the day like a water-bottle refill station: `squeeze: today -4,217 tok | lifetime -187k tok / 70 Wh ≈ 4 phone charges`.
 
-The framing is prompt literacy plus visibility plus sustainability: write tighter prompts, see what they cost, and report the cumulative footprint.
+The framing is **prompt literacy + realized savings + ambient visibility**: rewrite prompts the LLM understands but with fewer tokens, see what each one cost, watch the lifetime tally compound.
 
 ## Install
 
@@ -54,35 +55,52 @@ The hook runs with whatever `python3` is on your `PATH` and degrades gracefully:
 
 For development (eval harness, judge, tests), use `uv sync --extra dev` from the repo root.
 
-## Usage
+## Usage (v0.4 default)
 
-Compress a prompt and view the savings receipt:
+Just type. The hook does the rest.
 
+```text
+> Could you please help me refactor this 800-line module into smaller files?
+  I think it would be great if you could split out the auth logic, the database
+  layer, and the request handlers into their own modules. I want to make sure...
+  [continues for 1,200 tokens]
+
+prompt-squeeze: your prompt is 1,248 tokens. A compressed version saves
+487 tokens (~$0.0009, ~0.31 Wh).
+
+ORIGINAL (1248 tok)                    | COMPRESSED (761 tok, -39%)
+---------------------------------------+-------------------------------------
+Could you please help me refactor this | Refactor this 800-line module into
+800-line module into smaller files?    | smaller files. Split out auth logic,
+I think it would be great if you could | database layer, and request handlers
+split out the auth logic, the database | into their own modules. Make sure...
+layer, and the request handlers into   |
+...                                    |
+
+Reply with one of:
+  /sq y          send the squeezed version once
+  /sq y session  send squeezed AND auto-confirm for the rest of this session
+  /sq n          send your original prompt unchanged
+  /sq off        disable prompt-squeeze for the rest of this session
 ```
-/squeeze Please could you kindly help me write a function that ...
-```
 
-Show personal savings for the last 7 days:
+After `/sq y session`, subsequent long prompts get a terse one-liner — `prompt-squeeze auto: 940 → 612 tok (-35%) ...` — and a single `/sq y` confirms.
 
-```
-/squeeze-stats
-/squeeze-stats 30d
-```
+### Other commands
 
-Inspect or change settings:
-
-```
-/squeeze-config
-```
-
-The `UserPromptSubmit` hook fires on every prompt. When your prompt clears the warn threshold (default 800 tokens) and at least 25 percent of it is compressible, Claude receives an `additionalContext` nudge with the achievable savings and a pointer to `/squeeze`.
+- `/sq undo` — resend the most recent prompt as its original (requires `/sq explain on`)
+- `/sq explain` / `/sq explain --side` / `/sq explain --by-rule` — inspect rule-by-rule attribution for the most recent squeeze (requires `/sq explain on` first)
+- `/squeeze` — manual one-off: compress arbitrary text and show a receipt
+- `/squeeze-stats` — personal savings report (e.g. `/squeeze-stats 30d`)
+- `/squeeze-config` — inspect or change settings inline
 
 ## Privacy
 
-- Local-only by default. Nothing leaves your machine.
-- The hook log (`~/.claude/prompt-squeeze/log.jsonl`) records token counts, dollar/Wh estimates, and a 16-character SHA-256 prefix for each prompt and session. It never stores raw prompt text.
-- Setting `prompt-squeeze.telemetry` to `off` disables logging entirely.
-- Team aggregation is opt-in (`telemetry=team` plus a configured `team_endpoint`) and is not implemented in v0.1.
+- **Local-only by default.** Nothing leaves your machine.
+- **`log.jsonl` stores hashes only.** `~/.claude/prompt-squeeze/log.jsonl` records token counts, dollar/Wh estimates, and a 16-character SHA-256 prefix per prompt and session. It never stores raw prompt text.
+- **`/sq explain` is opt-in.** Default OFF. When enabled (`/sq explain on`), per-squeeze artifacts at `~/.claude/prompt-squeeze/explain/` store the original + squeezed text + rule hits with **secrets pre-redacted** (sk-`...`, ghp_`...`, AWS access keys, JWT-shaped strings, RFC-5321 emails). Capped at the last 100 squeezes. Never transmitted. `/sq explain off` disables and removes everything.
+- **`prompt-squeeze.telemetry = "off"`** disables logging entirely.
+- **Team aggregation** is opt-in (`telemetry=team` plus a configured `team_endpoint`) and is not yet implemented; the field is reserved for a self-hosted rollup.
 
 ## Settings (v0.4)
 
@@ -118,11 +136,11 @@ As of May 2026, Claude Code's `UserPromptSubmit` hook can add context or block s
 
 ## Status line (v0.4)
 
-prompt-squeeze emits a compact cumulative-savings line you can plug into Claude Code's status-line config. Add this to `~/.claude/settings.json`:
+prompt-squeeze emits a compact cumulative-savings line you can plug into Claude Code's status-line config. Add this to `~/.claude/settings.json` (assumes the direct-clone install path from the install section above):
 
 ```json
 {
-  "statusLine": "python3 ~/.claude/plugins/cache/<install-path>/skills/prompt-squeeze/scripts/status_line.py"
+  "statusLine": "python3 ~/.claude/plugins/local/prompt-squeeze/skills/prompt-squeeze/scripts/status_line.py"
 }
 ```
 
@@ -132,7 +150,7 @@ Then your Claude Code prompt area shows:
 squeeze: today -4,217 tok | lifetime -187,304 tok / 70.1 Wh ~= 4 phone charges
 ```
 
-Format scales with how much you've saved: small numbers show raw Wh, mid-range shows phone-charge-equivalents, larger shows hours of laptop use, very large shows kWh. Counts only **realized** savings (block + `/sq y`), never aspirational nudges.
+Format scales with how much you've saved: small numbers show raw Wh, mid-range shows phone-charge-equivalents, larger shows hours of laptop use, very large shows kWh. Counts only **realized** savings (block + `/sq y`), never aspirational nudges. Updated automatically each time the hook fires.
 
 ## Deep-dive (v0.4, opt-in)
 
