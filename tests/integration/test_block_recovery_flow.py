@@ -75,6 +75,61 @@ def test_yes_session_consent_produces_terse_banner(tmp_path, monkeypatch):
     assert "auto:" in reason
 
 
+def test_explain_artifact_written_when_opted_in(tmp_path, monkeypatch):
+    monkeypatch.setenv("HOME", str(tmp_path))
+    # Settings: explain=on
+    settings_dir = tmp_path / ".claude"
+    settings_dir.mkdir()
+    import json
+    (settings_dir / "settings.json").write_text(json.dumps({"prompt-squeeze.explain": "on"}))
+
+    import explain_artifact
+    from user_prompt_submit import _process
+
+    sid = "explain_on_test_session"
+    sh = hashlib.sha256(sid.encode()).hexdigest()[:16]
+
+    long_prompt = "Could you please " + "explain async/await in Python " * 200
+    payload = {
+        "session_id": sid,
+        "cwd": str(tmp_path),
+        "prompt": long_prompt,
+    }
+    result = _process(payload)
+    assert result["output"].get("decision") == "block"
+
+    artifact = explain_artifact.read_artifact(sh, relative_index=0)
+    assert artifact is not None
+    assert artifact["session"] == sh
+    assert "rules_fired" in artifact
+    # At least one rule should have fired (FILLER_COULD_YOU_PLEASE etc.)
+    assert len(artifact["rules_fired"]) > 0
+    # The rule list has the expected schema
+    for hit in artifact["rules_fired"]:
+        assert "rule_id" in hit
+        assert "removed" in hit
+
+
+def test_explain_artifact_NOT_written_when_off(tmp_path, monkeypatch):
+    monkeypatch.setenv("HOME", str(tmp_path))
+    # Default settings: explain=off
+    import explain_artifact
+    from user_prompt_submit import _process
+
+    sid = "explain_off_test_session"
+    sh = hashlib.sha256(sid.encode()).hexdigest()[:16]
+
+    long_prompt = "Could you please " + "explain async/await in Python " * 200
+    payload = {
+        "session_id": sid,
+        "cwd": str(tmp_path),
+        "prompt": long_prompt,
+    }
+    _process(payload)
+    artifact = explain_artifact.read_artifact(sh, relative_index=0)
+    assert artifact is None, "expected no artifact when explain=off"
+
+
 def test_no_consent_passes_through(tmp_path, monkeypatch):
     monkeypatch.setenv("HOME", str(tmp_path))
 

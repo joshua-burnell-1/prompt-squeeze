@@ -23,6 +23,7 @@ LOG_PATH = LOG_DIR / "log.jsonl"
 if str(HOOKS_DIR) not in sys.path:
     sys.path.insert(0, str(HOOKS_DIR))
 
+import explain_artifact  # noqa: E402
 import pending_cache  # noqa: E402
 import session_state  # noqa: E402
 
@@ -300,9 +301,15 @@ def _process(payload: dict) -> dict:
         base_log["action"] = "hook_timeout"
         return {"output": {}, "log": base_log}
 
-    # Compress.
+    # Compress. Use compress_with_hits when available so /sq explain has rule attribution.
     compress_mod, estimate_mod = _import_skill()
-    if compress_mod and hasattr(compress_mod, "compress"):
+    rule_hits: list = []
+    if compress_mod and hasattr(compress_mod, "compress_with_hits"):
+        try:
+            compressed_text, rule_hits = compress_mod.compress_with_hits(prompt)
+        except Exception:
+            compressed_text = _fallback_compress(prompt)
+    elif compress_mod and hasattr(compress_mod, "compress"):
         try:
             compressed_text = compress_mod.compress(prompt)
         except Exception:
@@ -375,6 +382,19 @@ def _process(payload: dict) -> dict:
         saved_wh=wh,
         store_original=explain_on,
     )
+
+    # When explain is opted in, persist a per-squeeze artifact for /sq explain.
+    if explain_on:
+        wrote = explain_artifact.write_artifact(
+            session_hash=session_hash,
+            seq=seq,
+            original_text=prompt,
+            squeezed_text=compressed_text,
+            tokens_original=original_tokens,
+            tokens_squeezed=compressed_tokens,
+            rules_fired=rule_hits,
+        )
+        base_log["explain_artifact_written"] = bool(wrote)
 
     if (time.monotonic() - started) * 1000 > WALL_BUDGET_MS:
         base_log["action"] = "hook_timeout"

@@ -133,14 +133,33 @@ def _normalize_whitespace(text: str) -> str:
 
 def compress(text: str) -> str:
     """Run the full Stage 1 deterministic compression pipeline."""
+    return compress_with_hits(text)[0]
+
+
+def compress_with_hits(text: str):
+    """Compress text and return (compressed_text, hits_list).
+
+    Each hit is a dict: {rule_id, span, removed, replacement}. Hits are surfaced
+    to the prompt-squeeze hook for /sq explain rule-attribution rendering."""
     if not text:
-        return text
+        return text, []
     body, protected = _extract_protected(text)
-    body, _hits = apply_all(DEFAULT_REGISTRY, body)
+    body, hits = apply_all(DEFAULT_REGISTRY, body)
     body = _cleanup_artifacts(body)
     body = _capitalize_sentences(body)
     body = _normalize_whitespace(body)
-    return _restore_protected(body, protected)
+    final = _restore_protected(body, protected)
+    # Convert dataclass Hit instances to plain dicts for JSON-friendly handoff.
+    hit_dicts = [
+        {
+            "rule_id": h.rule_id,
+            "span": list(h.span),
+            "removed": h.removed,
+            "replacement": h.replacement,
+        }
+        for h in hits
+    ]
+    return final, hit_dicts
 
 
 def _count_tokens_default(text: str) -> int:
