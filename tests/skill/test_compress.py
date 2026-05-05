@@ -316,3 +316,30 @@ class TestAggressiveQualifiers:
     def test_does_not_drop_inside_quoted_string(self):
         out = compress.compress('The error says "this is very bad"')
         assert "very bad" in out
+
+
+class TestAggressiveImperativeCollapse:
+    def test_i_would_like_you_to_drops(self):
+        out = compress.compress("I would like you to refactor foo.py:42.")
+        assert "I would like you to" not in out
+        assert "refactor foo.py:42" in out.lower()
+
+    def test_i_want_you_to_drops(self):
+        out = compress.compress("I want you to write a test for the parser.")
+        assert "I want you to" not in out
+        assert "write a test for the parser" in out.lower()
+
+    def test_i_need_you_to_drops(self):
+        out = compress.compress("I need you to fix the bug in handler.go.")
+        assert "I need you to" not in out
+        assert "handler.go" in out
+
+    def test_id_appreciate_it_if_drops(self):
+        out = compress.compress("I'd appreciate it if you could update the README.")
+        assert "appreciate it if" not in out.lower()
+        assert "README" in out
+
+    def test_what_id_like_drops(self):
+        out = compress.compress("What I'd like is for you to add a unit test.")
+        assert "what i'd like is for you to" not in out.lower()
+        assert "add a unit test" in out.lower()

@@ -252,8 +252,36 @@ V04_QUALIFIER_RULES: list[Rule] = [
 ]
 
 
+# ---------------------------------------------------------------------------
+# v0.4 imperative-collapse rules — 'I would like you to <verb>' -> '<verb>'.
+# The bare imperative carries the same meaning to an LLM.
+# ---------------------------------------------------------------------------
+
+V04_IMPERATIVE_RULES: list[Rule] = [
+    Rule(id="IMPERATIVE_I_WOULD_LIKE_YOU_TO",
+         pattern=r"\bi(?:'d| would) like (?:you )?to\b\s*", replacement="",
+         description="'I'd/I would like (you) to <verb>' -> '<verb>'"),
+    Rule(id="IMPERATIVE_I_WANT_YOU_TO",
+         pattern=r"\bi want (?:you )?to\b\s*", replacement="",
+         description="'I want (you) to <verb>' -> '<verb>'"),
+    Rule(id="IMPERATIVE_I_NEED_YOU_TO",
+         pattern=r"\bi need (?:you )?to\b\s*", replacement="",
+         description="'I need (you) to <verb>' -> '<verb>'"),
+    Rule(id="IMPERATIVE_APPRECIATE_IF",
+         pattern=r"\bi(?:'d| would) appreciate it if (?:you )?(?:could|would|might)\b\s*",
+         replacement="",
+         description="'I'd appreciate it if you could <verb>' -> '<verb>'"),
+    Rule(id="IMPERATIVE_WHAT_ID_LIKE",
+         pattern=r"\bwhat i(?:'d| would) like is (?:for you )?to\b\s*", replacement="",
+         description="'What I'd like is (for you) to <verb>' -> '<verb>'"),
+    Rule(id="IMPERATIVE_LET_ME_KNOW_IF",
+         pattern=r"\blet me know if (?:you )?(?:can|could)\b\s*", replacement="",
+         description="'let me know if you can <verb>' -> '<verb>'"),
+]
+
+
 # Default registry — order matters. Greeting first so it sees clean sentence boundaries,
-# then filler phrases, then verbose swaps, then v0.4 aggressive rules. Plan A tasks 9-10 append.
+# then filler phrases, then verbose swaps, then v0.4 aggressive rules. Plan A task 10 appends.
 DEFAULT_REGISTRY: list[Rule] = (
     [GREETING_RULE]
     + V03_FILLER_RULES
@@ -262,4 +290,5 @@ DEFAULT_REGISTRY: list[Rule] = (
     + V04_POLITENESS_RULES
     + V04_CONNECTOR_RULES
     + V04_QUALIFIER_RULES
+    + V04_IMPERATIVE_RULES
 )
