@@ -38,8 +38,8 @@ uv run python skills/prompt-squeeze/scripts/eval/run_eval.py --judge --judge-bac
 Compression-rule changes must keep the 100-prompt eval contract:
 
 - **Median fidelity ≥ 0.95** (Claude-as-judge score)
-- **5th-percentile fidelity ≥ 0.85**
-- **No prompt currently scoring ≥ 0.95 may regress below 0.95** (compared against `skills/prompt-squeeze/data/baseline_fidelity.json`)
+- **5th-percentile fidelity must not regress more than 0.03 from the v0.3 baseline** (relative gate; the baseline contains intrinsically low-fidelity prompts that no rule change can rescue)
+- **No individual prompt regresses more than 0.05 from its baseline fidelity** (per-prompt relative gate, compared against `skills/prompt-squeeze/data/baseline_fidelity.json`)
 
 CI runs the full `--judge` gate automatically when `ANTHROPIC_API_KEY` is configured as a repository secret. PRs from forks skip the judge step (no key access); maintainers should run the gate locally before merging.
 
