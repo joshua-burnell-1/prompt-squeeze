@@ -286,3 +286,33 @@ class TestAggressiveConnectors:
         out = compress.compress("At the end of the day, performance matters most.")
         assert "at the end of the day" not in out.lower()
         assert "performance matters most" in out.lower()
+
+
+class TestAggressiveQualifiers:
+    def test_drops_very_before_adjective(self):
+        out = compress.compress("This is a very important fix for foo.py.")
+        assert " very important" not in out
+        assert "important fix for foo.py" in out
+
+    def test_drops_really_before_verb(self):
+        out = compress.compress("I really need this to work.")
+        assert " really need" not in out
+        assert "need this to work" in out.lower()
+
+    def test_drops_actually(self):
+        out = compress.compress("This actually causes a memory leak.")
+        assert " actually " not in out
+        assert "causes a memory leak" in out.lower()
+
+    def test_drops_basically(self):
+        out = compress.compress("It basically does the same thing.")
+        assert " basically " not in out
+        assert "does the same thing" in out.lower()
+
+    def test_drops_essentially(self):
+        out = compress.compress("They essentially work the same way.")
+        assert " essentially " not in out
+
+    def test_does_not_drop_inside_quoted_string(self):
+        out = compress.compress('The error says "this is very bad"')
+        assert "very bad" in out

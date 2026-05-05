@@ -227,8 +227,33 @@ V04_CONNECTOR_RULES: list[Rule] = [
 ]
 
 
+# ---------------------------------------------------------------------------
+# v0.4 aggressive qualifier rules — words like 'very', 'really', 'basically'
+# add no LLM-relevant meaning before adjectives or verbs.
+# ---------------------------------------------------------------------------
+
+V04_QUALIFIER_RULES: list[Rule] = [
+    Rule(id="QUALIFIER_VERY", pattern=r"\bvery\b\s+", replacement="",
+         description="'very <X>' -> '<X>'"),
+    Rule(id="QUALIFIER_REALLY", pattern=r"\breally\b\s+", replacement="",
+         description="'really <X>' -> '<X>'"),
+    Rule(id="QUALIFIER_ACTUALLY", pattern=r"\bactually\b\s*[,]?\s*", replacement="",
+         description="'actually' -> drop"),
+    Rule(id="QUALIFIER_BASICALLY", pattern=r"\bbasically\b\s*[,]?\s*", replacement="",
+         description="'basically' -> drop"),
+    Rule(id="QUALIFIER_ESSENTIALLY", pattern=r"\bessentially\b\s*[,]?\s*", replacement="",
+         description="'essentially' -> drop"),
+    Rule(id="QUALIFIER_QUITE", pattern=r"\bquite\b\s+", replacement="",
+         description="'quite <X>' -> '<X>'"),
+    Rule(id="QUALIFIER_KIND_OF", pattern=r"\bkind of\b\s+", replacement="",
+         description="'kind of <X>' -> '<X>'"),
+    Rule(id="QUALIFIER_SORT_OF", pattern=r"\bsort of\b\s+", replacement="",
+         description="'sort of <X>' -> '<X>'"),
+]
+
+
 # Default registry — order matters. Greeting first so it sees clean sentence boundaries,
-# then filler phrases, then verbose swaps, then v0.4 aggressive rules. Plan A tasks 8-10 append.
+# then filler phrases, then verbose swaps, then v0.4 aggressive rules. Plan A tasks 9-10 append.
 DEFAULT_REGISTRY: list[Rule] = (
     [GREETING_RULE]
     + V03_FILLER_RULES
@@ -236,4 +261,5 @@ DEFAULT_REGISTRY: list[Rule] = (
     + [VERBOSE_FOR_PURPOSE_OF_GATED]
     + V04_POLITENESS_RULES
     + V04_CONNECTOR_RULES
+    + V04_QUALIFIER_RULES
 )
