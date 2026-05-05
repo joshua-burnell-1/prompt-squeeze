@@ -180,8 +180,35 @@ VERBOSE_FOR_PURPOSE_OF_GATED = Rule(
 )
 
 
+# ---------------------------------------------------------------------------
+# v0.4 aggressive politeness rules. Each must keep eval median fidelity >= 0.95.
+# ---------------------------------------------------------------------------
+
+V04_POLITENESS_RULES: list[Rule] = [
+    Rule(id="POLITENESS_NOT_TOO_MUCH_TROUBLE",
+         pattern=r"\bif it'?s not too much trouble[,\s]*", replacement="",
+         description="'if it's not too much trouble' -> drop"),
+    Rule(id="POLITENESS_HAVE_A_MOMENT",
+         pattern=r"\bif you have a (?:moment|second|minute|sec|chance)[,\s]*", replacement="",
+         description="'if you have a moment/second/minute/chance' -> drop"),
+    Rule(id="POLITENESS_WHEN_YOU_GET_CHANCE",
+         pattern=r"\bwhen you (?:get a chance|have a moment|have time)[,\s]*", replacement="",
+         description="'when you get a chance/have a moment/have time' -> drop"),
+    Rule(id="POLITENESS_SORRY_TO_BOTHER",
+         pattern=r"\bsorry to (?:bother|trouble) you[,\s]*(?:but\s+)?", replacement="",
+         description="'sorry to bother/trouble you (but)' -> drop"),
+    Rule(id="POLITENESS_HOPE_NOT_BOTHER",
+         pattern=r"\bi hope (?:this is|i'?m) not bothering you[,.\s]*", replacement="",
+         description="'I hope this isn't bothering you' -> drop"),
+]
+
+
 # Default registry — order matters. Greeting first so it sees clean sentence boundaries,
-# then filler phrases, then verbose swaps. Plan A tasks 6-10 append to this list.
+# then filler phrases, then verbose swaps, then v0.4 aggressive rules. Plan A tasks 7-10 append.
 DEFAULT_REGISTRY: list[Rule] = (
-    [GREETING_RULE] + V03_FILLER_RULES + V03_VERBOSE_RULES + [VERBOSE_FOR_PURPOSE_OF_GATED]
+    [GREETING_RULE]
+    + V03_FILLER_RULES
+    + V03_VERBOSE_RULES
+    + [VERBOSE_FOR_PURPOSE_OF_GATED]
+    + V04_POLITENESS_RULES
 )

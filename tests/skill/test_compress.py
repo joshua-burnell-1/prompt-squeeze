@@ -228,3 +228,29 @@ class TestForThePurposeOfFix:
         out = compress.compress("It's there for the purpose of, you know, that thing.")
         # Either it leaves the phrase OR it transforms safely. Just don't strip the meaning.
         assert "purpose" in out or "for that" in out.lower()
+
+
+class TestAggressivePoliteness:
+    def test_drops_if_not_too_much_trouble(self):
+        out = compress.compress("If it's not too much trouble, please review foo.py.")
+        assert "if it's not too much trouble" not in out.lower()
+        assert "foo.py" in out
+
+    def test_drops_if_you_have_a_moment(self):
+        out = compress.compress("If you have a moment, can you check bar.py?")
+        assert "if you have a moment" not in out.lower()
+        assert "bar.py" in out
+
+    def test_drops_when_you_get_a_chance(self):
+        out = compress.compress("When you get a chance, please update README.md.")
+        assert "when you get a chance" not in out.lower()
+        assert "README.md" in out
+
+    def test_drops_sorry_to_bother(self):
+        out = compress.compress("Sorry to bother you, but the test in test_x.py is flaky.")
+        assert "sorry to bother" not in out.lower()
+        assert "test_x.py" in out
+
+    def test_preserves_protected_content(self):
+        out = compress.compress("```\n# If you have a moment, fix this\n```\nhelp")
+        assert "If you have a moment" in out
