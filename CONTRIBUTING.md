@@ -83,7 +83,7 @@ git tag -a vX.Y.Z -m "release notes"
 git push origin vX.Y.Z
 ```
 
-Then bump the `version` field in `joshua-burnell-1/claude-plugins/.claude-plugin/marketplace.json` and the plugin's own `.claude-plugin/plugin.json`.
+Then bump the `version` field in `.claude-plugin/plugin.json` and `pyproject.toml`. Marketplace listing is pending approval; once live, the marketplace pin will need to be bumped separately.
 
 ## License
 

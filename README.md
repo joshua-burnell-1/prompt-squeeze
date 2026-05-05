@@ -18,14 +18,31 @@ The framing is prompt literacy plus visibility plus sustainability: write tighte
 
 ## Install
 
-From inside Claude Code:
+Direct install from this repo (the recommended path while marketplace listing is pending review):
 
-```
-/plugin marketplace add joshua-burnell-1/claude-plugins
-/plugin install prompt-squeeze@joshua-burnell-1
+```bash
+git clone https://github.com/joshua-burnell-1/prompt-squeeze ~/.claude/plugins/local/prompt-squeeze
 ```
 
-Then start a fresh `claude` session — the `UserPromptSubmit` hook registers at session start.
+Add to `~/.claude/settings.json`:
+
+```json
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          { "type": "command", "command": "python3 ~/.claude/plugins/local/prompt-squeeze/hooks/user_prompt_submit.py" }
+        ]
+      }
+    ]
+  }
+}
+```
+
+Then start a fresh `claude` session — the `UserPromptSubmit` hook registers at session start. Slash commands (`/sq`, `/squeeze`, `/squeeze-stats`, `/squeeze-config`) auto-discover from the repo's `commands/` directory.
+
+> **Note:** A Claude Code plugin marketplace listing is in review. Once approved, install will simplify to one line. The direct-clone path above stays supported indefinitely.
 
 ### Runtime requirements
 
