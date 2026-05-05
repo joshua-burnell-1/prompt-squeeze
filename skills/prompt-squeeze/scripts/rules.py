@@ -96,18 +96,44 @@ GREETING_RULE = Rule(
 
 
 V03_FILLER_RULES: list[Rule] = [
+    # 'could you please not X' MUST run before generic 'could you please' so 'not'
+    # gets recast to 'do not' instead of becoming a stranded "Not X" fragment.
+    Rule(id="FILLER_COULD_YOU_PLEASE_NOT",
+         pattern=r"\b(?:could|can|would) you please not\b", replacement="do not",
+         description="'could/can/would you please not <verb>' -> 'do not <verb>'"),
+    Rule(id="FILLER_COULD_YOU_NOT",
+         pattern=r"\b(?:could|can|would) you not\b", replacement="do not",
+         description="'could/can/would you not <verb>' -> 'do not <verb>'"),
+    # Wondering/great-if patterns extended to consume the trailing 'you might/could/would (be able to)'
+    # so the next sentence head is a real verb, not a weakened 'You might'.
+    Rule(id="FILLER_WONDERING_IF_YOU_HELPER",
+         pattern=r"\bi was wondering if you (?:might|could|would|can)(?:\s+be able to)?\b",
+         replacement="",
+         description="'I was wondering if you might/could/would (be able to)' -> drop with helper tail"),
     Rule(id="FILLER_WONDERING_COULD", pattern=r"\bi was wondering if you could\b", replacement="",
          description="'I was wondering if you could' -> drop"),
     Rule(id="FILLER_WONDERING_IF", pattern=r"\bi was wondering if\b", replacement="",
          description="'I was wondering if' -> drop"),
     Rule(id="FILLER_WONDERING", pattern=r"\bi was wondering\b", replacement="",
          description="'I was wondering' -> drop"),
+    Rule(id="FILLER_GREAT_IF_YOU_HELPER",
+         pattern=r"\bi think it would be great if you (?:could|would|might)\b",
+         replacement="",
+         description="'I think it would be great if you could/would/might' -> drop with helper tail"),
+    Rule(id="FILLER_GREAT_IF_YOU",
+         pattern=r"\bi think it would be great if you\b",
+         replacement="",
+         description="'I think it would be great if you <verb>' -> drop trailing 'you' too"),
     Rule(id="FILLER_GREAT_IF", pattern=r"\bi think it would be great if\b", replacement="",
          description="'I think it would be great if' -> drop"),
     Rule(id="FILLER_DONT_MIND", pattern=r"\bif you don'?t mind\b", replacement="",
          description="'if you don't mind' -> drop"),
     Rule(id="FILLER_THANKS_ADV_FOR", pattern=r"\bthanks in advance(?:\s+for[^.!?]*)?[!]*", replacement="",
          description="'thanks in advance for X!' -> drop"),
+    Rule(id="FILLER_THANKS_VERY_MUCH",
+         pattern=r"\bthanks (?:so much|very much)(?:\s+in advance)?(?:\s+for[^.!?]*)?[!]*",
+         replacement="",
+         description="'thanks so/very much (in advance) (for X)!' -> drop"),
     Rule(id="FILLER_THANK_YOU_VERY_MUCH",
          pattern=r"\bthank you (?:so much|very much)(?:\s+in advance)?(?:\s+for[^.!?]*)?[!]*",
          replacement="",
@@ -280,8 +306,48 @@ V04_IMPERATIVE_RULES: list[Rule] = [
 ]
 
 
+# ---------------------------------------------------------------------------
+# v0.4 article dropping — narrowest possible scope. Only drops 'The' / 'A' / 'An'
+# at the very start of a sentence (after start-of-text or sentence terminator)
+# AND when followed by a lowercase common noun (no underscores, no camelCase, no digits).
+# This category is the most fidelity-risky; keep tight gates.
+# ---------------------------------------------------------------------------
+
+_ARTICLE_AT_START_PATTERN = r"(^|(?<=[.!?])\s+)(?:[Tt]he|[Aa]n?)\s+(?=[a-z])"
+
+
+def _article_replacement(match: re.Match[str]) -> str:
+    return match.group(1) or ""
+
+
+def _article_gate(match: re.Match[str], full_text: str) -> bool:
+    """Skip if the next word looks like a code identifier (snake_case or camelCase)."""
+    end = match.end()
+    rest = full_text[end : end + 40]
+    next_word = re.match(r"(\w+)", rest)
+    if not next_word:
+        return False
+    word = next_word.group(1)
+    if "_" in word:
+        return False
+    if any(c.isupper() for c in word[1:]):  # camelCase like 'iOS', 'iPhone'
+        return False
+    if any(c.isdigit() for c in word):
+        return False
+    return True
+
+
+ARTICLE_DROP_RULE = Rule(
+    id="ARTICLE_DROP_AT_SENTENCE_START",
+    pattern=_ARTICLE_AT_START_PATTERN,
+    replacement=_article_replacement,
+    context_gate=_article_gate,
+    description="Drop 'The/A/An' at sentence start before a lowercase common noun",
+)
+
+
 # Default registry — order matters. Greeting first so it sees clean sentence boundaries,
-# then filler phrases, then verbose swaps, then v0.4 aggressive rules. Plan A task 10 appends.
+# then filler phrases, then verbose swaps, then v0.4 aggressive rules.
 DEFAULT_REGISTRY: list[Rule] = (
     [GREETING_RULE]
     + V03_FILLER_RULES
@@ -291,4 +357,5 @@ DEFAULT_REGISTRY: list[Rule] = (
     + V04_CONNECTOR_RULES
     + V04_QUALIFIER_RULES
     + V04_IMPERATIVE_RULES
+    + [ARTICLE_DROP_RULE]
 )

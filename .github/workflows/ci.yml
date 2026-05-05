@@ -34,6 +34,13 @@ jobs:
       - name: Eval harness (no --judge)
         run: uv run python skills/prompt-squeeze/scripts/eval/run_eval.py
 
+      - name: Eval gate (judge, full)
+        if: env.HAS_API_KEY == 'true'
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          HAS_API_KEY: ${{ secrets.ANTHROPIC_API_KEY != '' }}
+        run: uv run python skills/prompt-squeeze/scripts/eval/run_eval.py --judge --judge-backend sdk
+
   hook-py39-compat:
     # The UserPromptSubmit hook runs under whatever python3 is on the user's PATH,
     # which on macOS is often the system Python 3.9. Verify the hook still imports

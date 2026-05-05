@@ -22,11 +22,15 @@ sys.path.insert(0, str(_SCRIPTS_DIR))
 from compress import compress, compression_ratio  # noqa: E402
 from estimate import estimate  # noqa: E402
 
-# Seed-set thresholds: looser than the production CI gate from PRD section 10.
-# PRD target is median rubric >= 0.95 with none below 0.85, but with only 20
-# seed prompts we use these heuristic-only floors and document the gap here.
+# Production CI thresholds for the eval gate. PRD section 10 + spec section 1 (eval contract):
+# - Median fidelity >= 0.95
+# - 5th-percentile fidelity >= 0.85
+# - No prompt that previously scored >= 0.95 may regress below 0.95
 _MIN_MEDIAN_COMPRESSION = 0.10
-_MIN_MEDIAN_FIDELITY = 0.85
+_MIN_MEDIAN_FIDELITY = 0.95
+_MIN_P5_FIDELITY = 0.85
+_BASELINE_REGRESSION_THRESHOLD = 0.95
+_BASELINE_PATH = _SKILL_DIR / "data" / "baseline_fidelity.json"
 
 
 _JUDGE_SYSTEM = (
@@ -193,6 +197,7 @@ def main(argv: list[str] | None = None) -> int:
 
     ratios: list[float] = []
     fidelities: list[float] = []
+    fidelities_by_id: dict[str, float] = {}
     must_preserve_failures = 0
 
     for row in rows:
@@ -234,6 +239,7 @@ def main(argv: list[str] | None = None) -> int:
                 model=args.judge_model,
             )
             fidelities.append(fidelity)
+            fidelities_by_id[row["id"]] = fidelity
             print(f"  judge: fidelity={fidelity:.2f} reason={reason}")
 
     median_ratio = statistics.median(ratios)
@@ -269,6 +275,42 @@ def main(argv: list[str] | None = None) -> int:
             file=sys.stderr,
         )
         exit_code = 1
+
+    # 5th-percentile fidelity gate
+    if fidelities and len(fidelities) >= 20:
+        fidelities_sorted = sorted(fidelities)
+        p5_idx = max(0, int(len(fidelities_sorted) * 0.05) - 1)
+        p5 = fidelities_sorted[p5_idx]
+        print(f"5th-percentile fidelity: {p5:.3f}")
+        if p5 < _MIN_P5_FIDELITY:
+            print(
+                f"FAIL: p5 fidelity {p5:.3f} < {_MIN_P5_FIDELITY:.2f}",
+                file=sys.stderr,
+            )
+            exit_code = 1
+
+    # No-regression gate against baseline_fidelity.json. Only enforced on full --judge runs
+    # (sampled runs cover too few rows to compare meaningfully).
+    if args.judge and not args.judge_sample and _BASELINE_PATH.exists():
+        try:
+            baseline = json.loads(_BASELINE_PATH.read_text())
+        except Exception as exc:
+            print(f"WARN: could not load baseline: {exc}", file=sys.stderr)
+            baseline = {}
+        regressions: list[tuple[str, float, float]] = []
+        for row_id, current in fidelities_by_id.items():
+            base = baseline.get(row_id, {}).get("fidelity", 0.0)
+            if base >= _BASELINE_REGRESSION_THRESHOLD and current < _BASELINE_REGRESSION_THRESHOLD:
+                regressions.append((row_id, base, current))
+        if regressions:
+            for rid, b, c in regressions:
+                print(
+                    f"FAIL regression: {rid} baseline={b:.2f} current={c:.2f}",
+                    file=sys.stderr,
+                )
+            exit_code = 1
+        else:
+            print(f"no-regression gate: 0 prompts regressed below {_BASELINE_REGRESSION_THRESHOLD}")
 
     return exit_code
 

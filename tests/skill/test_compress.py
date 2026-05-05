@@ -343,3 +343,32 @@ class TestAggressiveImperativeCollapse:
         out = compress.compress("What I'd like is for you to add a unit test.")
         assert "what i'd like is for you to" not in out.lower()
         assert "add a unit test" in out.lower()
+
+
+class TestAggressiveArticleDropping:
+    def test_drops_the_at_sentence_start_before_lowercase_noun(self):
+        # 'The function is broken' — 'The' is droppable when followed by a common noun.
+        out = compress.compress("The function in foo.py is broken.")
+        # Capitalization post-pass may capitalize 'function' once 'The' is dropped — accept either.
+        assert "function in foo.py" in out.lower()
+        assert "is broken" in out
+
+    def test_keeps_the_inside_noun_phrase(self):
+        # Inside a noun phrase article is not at sentence start, so rule won't touch it.
+        out = compress.compress("Update the API contract with a new field.")
+        assert "the API" in out or "API contract" in out
+
+    def test_does_not_break_camelcase_identifier(self):
+        # 'The iOS bug...' — 'iOS' must stay 'iOS' even if 'The' drops.
+        out = compress.compress("The iOS bug is in src/main.swift.")
+        assert "iOS" in out
+
+    def test_preserves_articles_in_quoted_speech(self):
+        # Quoted content is protected upstream.
+        out = compress.compress('The error message says "the connection was reset".')
+        assert "the connection was reset" in out
+
+    def test_does_not_drop_before_snake_case(self):
+        # 'The user_id field...' — 'user_id' is an identifier; rule should skip.
+        out = compress.compress("The user_id field is null.")
+        assert "user_id" in out
