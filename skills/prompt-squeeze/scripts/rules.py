@@ -66,3 +66,91 @@ def apply_all(rules_list: list[Rule], text: str) -> tuple[str, list[Hit]]:
         current, hits = rule.apply(current)
         all_hits.extend(hits)
     return current, all_hits
+
+
+# ---------------------------------------------------------------------------
+# v0.3 carryover rules. Each gets a stable id so /sq explain (Plan C) can attribute hits.
+# Order matches the v0.3 _FILLER_PHRASES / _VERBOSE_SWAPS lists exactly so behavior is preserved.
+# ---------------------------------------------------------------------------
+
+# Greeting at start-of-text or right after sentence-ending punctuation. The boundary char
+# is captured so the substitution can preserve it (we don't want to swallow the previous
+# sentence's period). Mid-prose "hi" (e.g., "she said hi to him") is left alone.
+_GREETING_PATTERN = (
+    r"(^|(?<=[.!?]))\s*\b(?:hi|hello|hey)\b"
+    r"(?:\s+(?:there|everyone|folks|all|y'all|team))?[,!]*\s*"
+)
+
+
+def _greeting_replacement(match: re.Match[str]) -> str:
+    prefix = match.group(1)
+    return (prefix + " ") if prefix else ""
+
+
+GREETING_RULE = Rule(
+    id="FILLER_GREETING",
+    pattern=_GREETING_PATTERN,
+    replacement=_greeting_replacement,
+    description="Hi/Hello/Hey at sentence boundary -> drop, preserve boundary punctuation",
+)
+
+
+V03_FILLER_RULES: list[Rule] = [
+    Rule(id="FILLER_WONDERING_COULD", pattern=r"\bi was wondering if you could\b", replacement="",
+         description="'I was wondering if you could' -> drop"),
+    Rule(id="FILLER_WONDERING_IF", pattern=r"\bi was wondering if\b", replacement="",
+         description="'I was wondering if' -> drop"),
+    Rule(id="FILLER_WONDERING", pattern=r"\bi was wondering\b", replacement="",
+         description="'I was wondering' -> drop"),
+    Rule(id="FILLER_GREAT_IF", pattern=r"\bi think it would be great if\b", replacement="",
+         description="'I think it would be great if' -> drop"),
+    Rule(id="FILLER_DONT_MIND", pattern=r"\bif you don'?t mind\b", replacement="",
+         description="'if you don't mind' -> drop"),
+    Rule(id="FILLER_THANKS_ADV_FOR", pattern=r"\bthanks in advance(?:\s+for[^.!?]*)?[!]*", replacement="",
+         description="'thanks in advance for X!' -> drop"),
+    Rule(id="FILLER_THANK_YOU_VERY_MUCH",
+         pattern=r"\bthank you (?:so much|very much)(?:\s+in advance)?(?:\s+for[^.!?]*)?[!]*",
+         replacement="",
+         description="'thank you so/very much (in advance) for X!' -> drop"),
+    Rule(id="FILLER_THANK_YOU",
+         pattern=r"\bthank you(?:\s+in advance)?(?:\s+for[^.!?]*)?[!]*",
+         replacement="",
+         description="'thank you (in advance) for X!' -> drop"),
+    Rule(id="FILLER_THANKS", pattern=r"\bthanks(?:\s+for[^.!?]*)?[!]*", replacement="",
+         description="'thanks for X!' -> drop"),
+    Rule(id="FILLER_APPRECIATE", pattern=r"\bi really appreciate it[!.?]*", replacement="",
+         description="'I really appreciate it!' -> drop"),
+    Rule(id="FILLER_PLEASE", pattern=r"\bplease\b", replacement="",
+         description="'please' -> drop"),
+    Rule(id="FILLER_COULD_YOU_PLEASE", pattern=r"\bcould you please\b", replacement="",
+         description="'could you please' -> drop"),
+    Rule(id="FILLER_COULD_YOU", pattern=r"\bcould you\b", replacement="",
+         description="'could you' -> drop"),
+    Rule(id="FILLER_WOULD_YOU_MIND", pattern=r"\bwould you mind\b", replacement="",
+         description="'would you mind' -> drop"),
+    Rule(id="FILLER_WOULD_YOU", pattern=r"\bwould you\b", replacement="",
+         description="'would you' -> drop"),
+    Rule(id="FILLER_CAN_YOU_PLEASE", pattern=r"\bcan you please\b", replacement="",
+         description="'can you please' -> drop"),
+    Rule(id="FILLER_CAN_YOU", pattern=r"\bcan you\b", replacement="",
+         description="'can you' -> drop"),
+]
+
+
+V03_VERBOSE_RULES: list[Rule] = [
+    Rule(id="VERBOSE_IN_ORDER_TO", pattern=r"\bin order to\b", replacement="to"),
+    Rule(id="VERBOSE_AT_THIS_POINT", pattern=r"\bat this point in time\b", replacement="now"),
+    Rule(id="VERBOSE_DUE_TO_FACT", pattern=r"\bdue to the fact that\b", replacement="because"),
+    # NOTE: VERBOSE_FOR_PURPOSE_OF is intentionally absent here — Task 5 reclassifies it as
+    # context-gated via VERBOSE_FOR_PURPOSE_OF_GATED to fix the v0.3 0.72 fidelity outlier.
+    Rule(id="VERBOSE_IN_THE_EVENT", pattern=r"\bin the event that\b", replacement="if"),
+    Rule(id="VERBOSE_WITH_REGARD_TO", pattern=r"\bwith regard to\b", replacement="about"),
+    Rule(id="VERBOSE_WITH_REGARDS_TO", pattern=r"\bwith regards to\b", replacement="about"),
+    Rule(id="VERBOSE_MAKE_DECISION", pattern=r"\bmake a decision\b", replacement="decide"),
+    Rule(id="VERBOSE_GIVE_CONSIDERATION", pattern=r"\bgive consideration to\b", replacement="consider"),
+]
+
+
+# Default registry — order matters. Greeting first so it sees clean sentence boundaries,
+# then filler phrases, then verbose swaps. Plan A tasks 5-10 append to this list.
+DEFAULT_REGISTRY: list[Rule] = [GREETING_RULE] + V03_FILLER_RULES + V03_VERBOSE_RULES
