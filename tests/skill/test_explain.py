@@ -3,7 +3,6 @@
 
 import explain  # noqa: E402 (added to sys.path by conftest)
 
-
 SAMPLE = {
     "ts": "2026-05-04T18:23:11Z",
     "session": "abc123",

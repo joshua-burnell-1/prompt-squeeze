@@ -6,7 +6,6 @@ from __future__ import annotations
 import re
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Union
 
 
 @dataclass
@@ -18,7 +17,7 @@ class Hit:
     replacement: str
 
 
-Replacement = Union[str, Callable[[re.Match[str]], str]]
+Replacement = "str | Callable[[re.Match[str]], str]"
 ContextGate = Callable[[re.Match[str], str], bool]
 
 

@@ -99,6 +99,40 @@ See [`settings.schema.json`](./settings.schema.json) for the full schema. Keys l
 
 As of May 2026, Claude Code's `UserPromptSubmit` hook can add context or block submission, but cannot silently rewrite the prompt before the model sees it (canonical issue: anthropics/claude-code#27365). v0.4's default `interactive` mode works around this: the hook blocks the long prompt, caches both the original and squeezed versions, and the user's `/sq y` slash command submits the squeezed text as the next user message. When Anthropic ships native prompt replacement, the `replace` mode in the schema becomes available and the consent flow simplifies to a one-time-only banner.
 
+## Status line (v0.4)
+
+prompt-squeeze emits a compact cumulative-savings line you can plug into Claude Code's status-line config. Add this to `~/.claude/settings.json`:
+
+```json
+{
+  "statusLine": "python3 ~/.claude/plugins/cache/<install-path>/skills/prompt-squeeze/scripts/status_line.py"
+}
+```
+
+Then your Claude Code prompt area shows:
+
+```
+squeeze: today -4,217 tok | lifetime -187,304 tok / 70.1 Wh ~= 4 phone charges
+```
+
+Format scales with how much you've saved: small numbers show raw Wh, mid-range shows phone-charge-equivalents, larger shows hours of laptop use, very large shows kWh. Counts only **realized** savings (block + `/sq y`), never aspirational nudges.
+
+## Deep-dive (v0.4, opt-in)
+
+To inspect rule-by-rule attribution for any squeeze, enable the explain feature first:
+
+```
+/sq explain on
+```
+
+This writes a redacted artifact at `~/.claude/prompt-squeeze/explain/<session>-<seq>.json` for each squeeze (last 100 retained, secrets stripped, never transmitted). Then:
+
+- `/sq explain` — inline annotated diff with footnoted rule attribution
+- `/sq explain --side` — side-by-side ORIGINAL | COMPRESSED with rules listed below
+- `/sq explain --by-rule` — group hits by rule_id, show frequency
+
+Run `/sq explain off` to disable and remove all stored artifacts.
+
 ## Migration from v0.3
 
 v0.4 flips the default from `advise` (nudge only) to `interactive` (block + `/sq y`). If you preferred v0.3's behavior, opt out with:
@@ -118,6 +152,16 @@ The v0.3 nudge path is preserved exactly — the hook continues to emit `additio
 The energy figure is a floor; production deployments vary 3-10x depending on batch size, sequence length, and hardware mix. The receipt cites the methodology so reviewers can recompute against their own numbers.
 
 ## Changelog
+
+### 0.4.0 (2026-05-05)
+
+- **Default flips to interactive blocking.** `mode=interactive` is the new default; long prompts (>500 tokens) are blocked and offered for squeeze with a side-by-side diff. v0.3 nudge-only behavior preserved via `mode=advise`.
+- **One-time-per-session consent flow.** First long prompt shows the full banner with three choices (`/sq y` once / `/sq y session` rest-of-session / `/sq n` original). Subsequent long prompts get a terse one-liner banner that takes a single `/sq y` to confirm.
+- **`/sq` slash command suite:** `/sq y`, `/sq y session`, `/sq n`, `/sq undo`, `/sq off` for the runtime flow; `/sq explain`, `/sq explain on/off`, `/sq explain --side`, `/sq explain --by-rule` for the deep-dive.
+- **Per-squeeze deep-dive (opt-in).** Enable with `/sq explain on`; future squeezes write a redacted artifact at `~/.claude/prompt-squeeze/explain/`. Three render modes (inline diff, side-by-side, by-rule). Last 100 retained, secrets stripped, never transmitted.
+- **Persistent compounded savings.** A new `rollup` module derives cumulative tokens/dollars/Wh from `log.jsonl`. The included `status_line.py` emits a compact "today / lifetime" string for Claude Code's status line ("squeeze: today -4,217 tok | lifetime -187k tok / 70 Wh ≈ 4 phone charges").
+- **Honest accounting.** Only prompts the user actually approved (`block` + `user_action=y`) count toward "saved." Analyzed-but-skipped prompts roll up under a separate `analyzed_only` counter.
+- **Settings:** new `block_threshold` (default 500), `explain` (default `off`), `mode` enum extended to include `interactive`.
 
 ### 0.3.3 (2026-05-05)
 
