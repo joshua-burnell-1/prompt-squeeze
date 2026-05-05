@@ -73,7 +73,13 @@ class TestHookInputParsing:
 
 
 class TestHookNudge:
-    def test_long_prompt_emits_nudge(self, tmp_log_dir):
+    def test_long_prompt_emits_nudge_in_advise_mode(self, tmp_log_dir):
+        # v0.4 default is interactive-block; advise-mode behavior is opt-in via settings.
+        settings_dir = tmp_log_dir.parent / ".claude"
+        settings_dir.mkdir(exist_ok=True)
+        (settings_dir / "settings.json").write_text(
+            json.dumps({"prompt-squeeze.mode": "advise"})
+        )
         long_prompt = (
             "Hi, I was wondering if you could please help me out. "
             "I'm trying to figure out what's wrong with my code. "
@@ -81,7 +87,7 @@ class TestHookNudge:
         ) * 30  # ~1500 tokens of filler-heavy text
 
         result = run_hook(
-            {"prompt": long_prompt, "session_id": "abc", "cwd": "/", "permission_mode": "default"},
+            {"prompt": long_prompt, "session_id": "abc", "cwd": str(tmp_log_dir.parent), "permission_mode": "default"},
             env={"HOME": str(tmp_log_dir.parent)},
         )
         assert result.returncode == 0
@@ -94,6 +100,22 @@ class TestHookNudge:
             assert ctx is not None, f"expected additionalContext, got {data}"
             assert "/squeeze" in ctx
             assert "tokens" in ctx.lower()
+
+    def test_long_prompt_blocks_in_default_interactive_mode(self, tmp_log_dir):
+        long_prompt = (
+            "Hi, I was wondering if you could please help me out. "
+            "I'm trying to figure out what's wrong with my code. "
+            "Could you please take a look at it for me? Thanks in advance!\n"
+        ) * 30
+
+        result = run_hook(
+            {"prompt": long_prompt, "session_id": "abc_default_block", "cwd": "/", "permission_mode": "default"},
+            env={"HOME": str(tmp_log_dir.parent)},
+        )
+        assert result.returncode == 0
+        data = json.loads(result.stdout)
+        assert data.get("decision") == "block"
+        assert "/sq y" in data.get("reason", "")
 
 
 class TestHookHardLimit:

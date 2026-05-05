@@ -14,19 +14,35 @@ from pathlib import Path
 
 PLUGIN_ROOT = Path(__file__).resolve().parent.parent
 SKILL_SCRIPTS = PLUGIN_ROOT / "skills" / "prompt-squeeze" / "scripts"
+HOOKS_DIR = Path(__file__).resolve().parent
 PRICING_PATH = PLUGIN_ROOT / "skills" / "prompt-squeeze" / "data" / "pricing.json"
 LOG_DIR = Path.home() / ".claude" / "prompt-squeeze"
 LOG_PATH = LOG_DIR / "log.jsonl"
 
+# Make sibling helper modules importable when the hook runs as a script.
+if str(HOOKS_DIR) not in sys.path:
+    sys.path.insert(0, str(HOOKS_DIR))
+
+import pending_cache  # noqa: E402
+import session_state  # noqa: E402
+
 DEFAULT_SETTINGS = {
-    "mode": "advise",
+    # v0.4: default flips to "interactive" — block long prompts and offer /sq y for realized savings.
+    # Set to "advise" for v0.3 nudge-only behavior, "off" to disable the hook.
+    "mode": "interactive",
+    # v0.4: prompts above this token count are blocked in interactive mode.
+    "block_threshold": 500,
+    # Legacy v0.3 advise-mode threshold. Honored when mode == "advise".
     "warn_threshold": 800,
     "notify_threshold": 0.25,
     "hard_limit": 4000,
-    "interactive": False,
+    "interactive": False,  # legacy, ignored when mode == "interactive"
     "telemetry": "local",
     "model_override": None,
     "team_endpoint": None,
+    # v0.4: per-squeeze artifact opt-in (Plan C). When "on", the hook stores
+    # original_text in pending_cache so /sq undo can resend the original.
+    "explain": "off",
 }
 
 WALL_BUDGET_MS = 2500
@@ -218,11 +234,23 @@ def _nudge_message(original: int, saved: int, dollars: float, wh: float) -> str:
     )
 
 
+def _next_seq(session_hash: str) -> int:
+    """Next sequence number for this session, derived from any existing pending entry."""
+    try:
+        existing = pending_cache.read_pending(session_hash)
+        if existing:
+            return int(existing.get("seq", 0)) + 1
+    except Exception:
+        pass
+    return 1
+
+
 def _process(payload: dict) -> dict:
     started = time.monotonic()
     settings = _load_settings(payload.get("cwd"))
 
-    if settings.get("mode") == "off":
+    mode = settings.get("mode", "interactive")
+    if mode == "off":
         return {"output": {}, "log": None}
 
     prompt = _read_prompt(payload)
@@ -237,6 +265,8 @@ def _process(payload: dict) -> dict:
 
     original_tokens = _tokenize(prompt)
 
+    consent = session_state.read_consent(session_hash)
+
     base_log = {
         "ts": now,
         "session": session_hash,
@@ -249,15 +279,28 @@ def _process(payload: dict) -> dict:
         "estimated_wh_saved": 0.0,
         "action": "measure_only",
         "user_action": None,
+        "consent": consent,
+        "mode": mode,
     }
 
-    if original_tokens < settings.get("warn_threshold", 800):
+    # User opted out for this session — pass through unchanged, log measurement only.
+    if consent == "no":
+        base_log["action"] = "consent_no"
+        return {"output": {}, "log": base_log}
+
+    # Threshold gate. interactive mode uses block_threshold; advise mode keeps warn_threshold.
+    threshold = settings.get(
+        "block_threshold" if mode == "interactive" else "warn_threshold",
+        500 if mode == "interactive" else 800,
+    )
+    if original_tokens < threshold:
         return {"output": {}, "log": base_log}
 
     if (time.monotonic() - started) * 1000 > WALL_BUDGET_MS:
         base_log["action"] = "hook_timeout"
         return {"output": {}, "log": base_log}
 
+    # Compress.
     compress_mod, estimate_mod = _import_skill()
     if compress_mod and hasattr(compress_mod, "compress"):
         try:
@@ -296,47 +339,76 @@ def _process(payload: dict) -> dict:
         "estimated_wh_saved": round(wh, 4),
     })
 
-    if achievable_pct < settings.get("notify_threshold", 0.25):
-        base_log["action"] = "silent"
-        return {"output": {}, "log": base_log}
+    # ----- advise mode: legacy v0.3 nudge behavior -----
+    if mode == "advise":
+        if achievable_pct < settings.get("notify_threshold", 0.25):
+            base_log["action"] = "silent"
+            return {"output": {}, "log": base_log}
+
+        if (time.monotonic() - started) * 1000 > WALL_BUDGET_MS:
+            base_log["action"] = "hook_timeout"
+            return {"output": {}, "log": base_log}
+
+        base_log["action"] = "nudge"
+        msg = _nudge_message(original_tokens, saved_tokens, dollars, wh)
+        return {
+            "output": {
+                "hookSpecificOutput": {
+                    "hookEventName": "UserPromptSubmit",
+                    "additionalContext": msg,
+                }
+            },
+            "log": base_log,
+        }
+
+    # ----- interactive mode (v0.4 default): block + write pending cache -----
+    explain_on = settings.get("explain", "off") == "on"
+    seq = _next_seq(session_hash)
+    pending_cache.write_pending(
+        session_hash=session_hash,
+        seq=seq,
+        original_text=prompt,
+        squeezed_text=compressed_text,
+        tokens_original=original_tokens,
+        tokens_squeezed=compressed_tokens,
+        saved_dollars=dollars,
+        saved_wh=wh,
+        store_original=explain_on,
+    )
 
     if (time.monotonic() - started) * 1000 > WALL_BUDGET_MS:
         base_log["action"] = "hook_timeout"
         return {"output": {}, "log": base_log}
 
-    if (
-        original_tokens > settings.get("hard_limit", 4000)
-        and settings.get("interactive")
-    ):
-        base_log["action"] = "block"
+    if consent == "yes-session":
+        base_log["action"] = "block_terse"
+        reason = (
+            f"prompt-squeeze auto: {original_tokens} -> {compressed_tokens} tok "
+            f"(-{achievable_pct:.0%}) saved ~${dollars:.4f}, ~{wh:.2f} Wh\n"
+            "Reply: /sq y to send the squeezed version, /sq n to send original, /sq off to disable for this session"
+        )
+    else:
+        # No consent yet — full banner with side-by-side diff + three-choice prompt.
+        base_log["action"] = "block_full_banner"
         diff = _side_by_side(
             prompt,
             compressed_text,
-            original_label=f"ORIGINAL ({original_tokens} tokens)",
-            compressed_label=f"COMPRESSED ({compressed_tokens} tokens, -{achievable_pct:.0%})",
+            original_label=f"ORIGINAL ({original_tokens} tok)",
+            compressed_label=f"COMPRESSED ({compressed_tokens} tok, -{achievable_pct:.0%})",
         )
         reason = (
-            f"Prompt is {original_tokens} tokens (limit {settings['hard_limit']}). "
-            f"A Stage 1 compression cuts ~{saved_tokens} tokens "
-            f"(~${dollars:.4f}, ~{wh:.2f} Wh).\n\n"
+            f"prompt-squeeze: your prompt is {original_tokens} tokens. A compressed "
+            f"version saves {saved_tokens} tokens (~${dollars:.4f}, ~{wh:.2f} Wh).\n\n"
             f"{diff}\n\n"
-            "Run `/squeeze` to compress and resubmit, "
-            "or lower `prompt-squeeze.hard_limit` in settings to send as-is."
+            "Reply with one of:\n"
+            "  /sq y          send the squeezed version once\n"
+            "  /sq y session  send squeezed AND auto-confirm for the rest of this session\n"
+            "  /sq n          send your original prompt unchanged\n"
+            "  /sq off        disable prompt-squeeze for the rest of this session"
         )
-        return {
-            "output": {"decision": "block", "reason": reason},
-            "log": base_log,
-        }
 
-    base_log["action"] = "nudge"
-    msg = _nudge_message(original_tokens, saved_tokens, dollars, wh)
     return {
-        "output": {
-            "hookSpecificOutput": {
-                "hookEventName": "UserPromptSubmit",
-                "additionalContext": msg,
-            }
-        },
+        "output": {"decision": "block", "reason": reason},
         "log": base_log,
     }
 
@@ -503,26 +575,38 @@ def _self_test() -> int:
         "cwd": tmp_home,
         "prompt": long_text,
     }
+    # v0.4 default — interactive mode blocks long prompts with /sq y prompt.
     run_case(
-        "long_prompt_nudge",
+        "long_prompt_block_default",
+        long_payload,
+        lambda rc, out: (
+            rc == 0 and '"decision":"block"' in out.replace(" ", "") and "/sq y" in out,
+            f"rc={rc} out_len={len(out)} has_block={'block' in out}",
+        ),
+    )
+
+    # v0.3 advise-mode behavior (opt-in via settings) still works — emits nudge.
+    settings_dir = Path(tmp_home) / ".claude"
+    settings_dir.mkdir(parents=True, exist_ok=True)
+    (settings_dir / "settings.json").write_text(json.dumps({
+        "prompt-squeeze.mode": "advise",
+    }))
+    run_case(
+        "long_prompt_nudge_advise",
         long_payload,
         lambda rc, out: (
             rc == 0 and "additionalContext" in out and "/squeeze" in out,
             f"rc={rc} out_len={len(out)} has_ctx={'additionalContext' in out}",
         ),
     )
+    (settings_dir / "settings.json").unlink()
 
     hard_payload = {
         "session_id": "s3",
         "cwd": tmp_home,
         "prompt": long_text * 10,
     }
-    settings_dir = Path(tmp_home) / ".claude"
-    settings_dir.mkdir(parents=True, exist_ok=True)
-    (settings_dir / "settings.json").write_text(json.dumps({
-        "prompt-squeeze.interactive": True,
-        "prompt-squeeze.hard_limit": 500,
-    }))
+    # interactive mode blocks long prompts by default — no settings needed.
     run_case(
         "hard_limit_block",
         hard_payload,
@@ -531,7 +615,6 @@ def _self_test() -> int:
             f"rc={rc} out_head={out[:160]!r}",
         ),
     )
-    (settings_dir / "settings.json").unlink()
 
     rc, bad_out = _run_raw("{not json")
     results.append((

@@ -101,10 +101,8 @@ class TestHookBlockOutputIncludesDiff:
         (settings_dir / "settings.json").write_text(
             json.dumps(
                 {
-                    "prompt-squeeze.mode": "advise",
-                    "prompt-squeeze.warn_threshold": 20,
-                    "prompt-squeeze.hard_limit": 50,
-                    "prompt-squeeze.interactive": True,
+                    "prompt-squeeze.mode": "interactive",
+                    "prompt-squeeze.block_threshold": 20,
                     "prompt-squeeze.notify_threshold": 0.05,
                 }
             )
@@ -147,7 +145,7 @@ class TestHookBlockOutputIncludesDiff:
         assert "ORIGINAL" in reason
         assert "COMPRESSED" in reason
         assert "|" in reason
-        assert "/squeeze" in reason
+        assert "/sq y" in reason
 
 
 class TestHookSelfTestStillPasses:
