@@ -202,3 +202,29 @@ class TestCapitalizationPostPass:
         first = compress.compress("Please fix foo.py. please also lint it.")
         second = compress.compress(first)
         assert first == second
+
+
+class TestForThePurposeOfFix:
+    """Regression tests for v0.3 fidelity bug #1 — 'for the purpose of' -> 'to' lost causal meaning.
+    See spec section 1, Bug fix #1."""
+
+    def test_swaps_when_followed_by_verb_ing(self):
+        out = compress.compress("Wrote a script for the purpose of testing the API.")
+        assert "for the purpose of" not in out
+        assert "to test" in out
+        assert "API" in out
+
+    def test_swaps_when_followed_by_verb_ing_complex(self):
+        out = compress.compress("Built it for the purpose of validating user input.")
+        assert "for the purpose of" not in out
+        assert "to validate" in out
+        assert "user input" in out
+
+    def test_does_not_swap_when_followed_by_noun(self):
+        out = compress.compress("This code exists for the purpose of compatibility.")
+        assert "for the purpose of compatibility" in out
+
+    def test_does_not_swap_when_dangling(self):
+        out = compress.compress("It's there for the purpose of, you know, that thing.")
+        # Either it leaves the phrase OR it transforms safely. Just don't strip the meaning.
+        assert "purpose" in out or "for that" in out.lower()

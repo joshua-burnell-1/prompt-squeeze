@@ -151,6 +151,37 @@ V03_VERBOSE_RULES: list[Rule] = [
 ]
 
 
+# ---------------------------------------------------------------------------
+# v0.4 Bug fix #1: 'for the purpose of' is context-gated. It fires only when followed
+# by a gerund (verb-ing), in which case 'for the purpose of testing' becomes
+# 'to test'. When followed by a bare noun ('for the purpose of compatibility')
+# the phrase carries the meaning and is left intact.
+# ---------------------------------------------------------------------------
+
+
+def _purpose_of_replacement(match: re.Match[str]) -> str:
+    verb_ing = match.group(1)
+    base = verb_ing[:-3]  # 'testing' -> 'test'
+    # Restore final 'e' for verbs that drop it before -ing: 'validating' -> 'validate',
+    # 'creating' -> 'create', 'storing' -> 'store'. Heuristic — covers most common forms.
+    if re.search(
+        r"[bcdfghjklmnpqrstvwxz](?:at|iz|ic|os|ur|in|ess|ag|ut|ad|or|ov|ak|ar)$",
+        base,
+    ):
+        base = base + "e"
+    return f"to {base}"
+
+
+VERBOSE_FOR_PURPOSE_OF_GATED = Rule(
+    id="VERBOSE_FOR_PURPOSE_OF_GATED",
+    pattern=r"\bfor the purpose of\s+(\w+ing)\b",
+    replacement=_purpose_of_replacement,
+    description="'for the purpose of <verb-ing>' -> 'to <verb>' (only when verb-ing form follows)",
+)
+
+
 # Default registry — order matters. Greeting first so it sees clean sentence boundaries,
-# then filler phrases, then verbose swaps. Plan A tasks 5-10 append to this list.
-DEFAULT_REGISTRY: list[Rule] = [GREETING_RULE] + V03_FILLER_RULES + V03_VERBOSE_RULES
+# then filler phrases, then verbose swaps. Plan A tasks 6-10 append to this list.
+DEFAULT_REGISTRY: list[Rule] = (
+    [GREETING_RULE] + V03_FILLER_RULES + V03_VERBOSE_RULES + [VERBOSE_FOR_PURPOSE_OF_GATED]
+)
