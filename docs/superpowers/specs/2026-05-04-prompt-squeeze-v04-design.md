@@ -84,14 +84,14 @@ Components communicate through files in `~/.claude/prompt-squeeze/`. No new daem
 
 - `mode` default flips from `"advise"` to `"interactive"`
 - `interactive` setting is removed (folded into `mode`)
-- `hard_limit` semantics change: now the threshold above which blocking activates (default lowered from 4000 to 600 tokens to catch typical long prompts)
+- `hard_limit` semantics change: now the threshold above which blocking activates (default lowered from 4000 to 500 tokens to catch typical long prompts)
 - `warn_threshold` removed — single threshold (`block_threshold`) governs the entire flow
 - New `mode: "advise"` retained as opt-out for users who want v0.3 behavior
 
 **Per-prompt flow (new):**
 
 1. Hook receives prompt P
-2. Tokenizes; if below `block_threshold` (default 600 tokens), no-op (log measurement only)
+2. Tokenizes; if below `block_threshold` (default 500 tokens), no-op (log measurement only)
 3. Reads session consent state from `~/.claude/prompt-squeeze/sessions/<session_hash>.json`. State is one of three values:
    - `null` (no decision yet this session) → continue to compression + full banner
    - `"yes-session"` → continue to compression + terse banner
