@@ -203,12 +203,37 @@ V04_POLITENESS_RULES: list[Rule] = [
 ]
 
 
+# ---------------------------------------------------------------------------
+# v0.4 aggressive connector rules — verbose phrases that rarely add LLM-relevant meaning.
+# ---------------------------------------------------------------------------
+
+V04_CONNECTOR_RULES: list[Rule] = [
+    Rule(id="CONNECTOR_WITH_RESPECT_TO", pattern=r"\bwith respect to\b", replacement="about"),
+    Rule(id="CONNECTOR_IN_TERMS_OF", pattern=r"\bin terms of\b", replacement=""),
+    Rule(id="CONNECTOR_WITH_REFERENCE_TO", pattern=r"\bwith reference to\b", replacement="about"),
+    Rule(id="CONNECTOR_IN_RELATION_TO", pattern=r"\bin relation to\b", replacement="about"),
+    Rule(id="CONNECTOR_AS_MATTER_OF_FACT",
+         pattern=r"\bas a matter of fact[,\s]*", replacement="",
+         description="'as a matter of fact' -> drop"),
+    Rule(id="CONNECTOR_AT_END_OF_DAY",
+         pattern=r"\bat the end of the day[,\s]*", replacement="",
+         description="'at the end of the day' -> drop"),
+    Rule(id="CONNECTOR_THE_FACT_OF_MATTER",
+         pattern=r"\bthe fact of the matter is(?:\s+that)?[,\s]*", replacement="",
+         description="'the fact of the matter is (that)' -> drop"),
+    Rule(id="CONNECTOR_NEEDLESS_TO_SAY",
+         pattern=r"\bneedless to say[,\s]*", replacement="",
+         description="'needless to say' -> drop"),
+]
+
+
 # Default registry — order matters. Greeting first so it sees clean sentence boundaries,
-# then filler phrases, then verbose swaps, then v0.4 aggressive rules. Plan A tasks 7-10 append.
+# then filler phrases, then verbose swaps, then v0.4 aggressive rules. Plan A tasks 8-10 append.
 DEFAULT_REGISTRY: list[Rule] = (
     [GREETING_RULE]
     + V03_FILLER_RULES
     + V03_VERBOSE_RULES
     + [VERBOSE_FOR_PURPOSE_OF_GATED]
     + V04_POLITENESS_RULES
+    + V04_CONNECTOR_RULES
 )

@@ -254,3 +254,35 @@ class TestAggressivePoliteness:
     def test_preserves_protected_content(self):
         out = compress.compress("```\n# If you have a moment, fix this\n```\nhelp")
         assert "If you have a moment" in out
+
+
+class TestAggressiveConnectors:
+    def test_with_respect_to_to_about(self):
+        out = compress.compress("Tell me about the trade-offs with respect to latency.")
+        assert "with respect to" not in out.lower()
+        assert "about latency" in out
+
+    def test_in_terms_of_drops(self):
+        out = compress.compress("Optimize in terms of memory usage.")
+        assert "in terms of" not in out.lower()
+        assert "memory usage" in out
+
+    def test_with_reference_to_to_about(self):
+        out = compress.compress("Update the doc with reference to the new schema.")
+        assert "with reference to" not in out.lower()
+        assert "schema" in out
+
+    def test_in_relation_to_to_about(self):
+        out = compress.compress("How does this work in relation to caching?")
+        assert "in relation to" not in out.lower()
+        assert "caching" in out
+
+    def test_as_a_matter_of_fact_drops(self):
+        out = compress.compress("As a matter of fact, the bug is in line 42.")
+        assert "as a matter of fact" not in out.lower()
+        assert "line 42" in out
+
+    def test_at_the_end_of_the_day_drops(self):
+        out = compress.compress("At the end of the day, performance matters most.")
+        assert "at the end of the day" not in out.lower()
+        assert "performance matters most" in out.lower()
