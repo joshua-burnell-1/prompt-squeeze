@@ -10,7 +10,8 @@ class TestCompressBasics:
     def test_strips_leading_filler(self):
         out = compress.compress("Hi, I was wondering if you could fix this bug")
         assert "I was wondering if" not in out
-        assert "fix this bug" in out
+        # v0.4 capitalization post-pass may capitalize the new sentence head; accept either.
+        assert "fix this bug" in out.lower()
 
     def test_strips_thanks(self):
         out = compress.compress("Fix the bug. Thanks in advance!")
@@ -163,3 +164,41 @@ def test_compression_does_not_invent_content():
     forbidden = ["TODO", "NOTE:", "HACK", "FIXME"]
     for f in forbidden:
         assert f not in out
+
+
+class TestCapitalizationPostPass:
+    """v0.4 fix: after filler stripping, sentence heads can become lowercase.
+    This pass re-capitalizes the first letter of each sentence."""
+
+    def test_capitalizes_first_letter_after_filler_strip(self):
+        out = compress.compress("please update foo.py.")
+        assert out[:1].isupper(), f"expected leading capital, got {out!r}"
+
+    def test_capitalizes_second_sentence_after_filler(self):
+        # After "Fix this." the next sentence starts lowercase due to filler strip.
+        out = compress.compress("Fix this. please update foo.py with the new API.")
+        # No lowercase word should immediately follow ". " or "? " or "! ".
+        import re
+        bad = re.findall(r"[.!?]\s+([a-z]\w+)", out)
+        assert not bad, f"found lowercase sentence starts: {bad!r}"
+
+    def test_does_not_touch_proper_nouns(self):
+        out = compress.compress("Use Python and JavaScript.")
+        assert "Python" in out
+        assert "JavaScript" in out
+
+    def test_handles_question_and_exclamation(self):
+        out = compress.compress("Why? please explain. Also! please clarify.")
+        import re
+        bad = re.findall(r"[.!?]\s+([a-z]\w+)", out)
+        assert not bad, f"found lowercase sentence starts: {bad!r}"
+
+    def test_preserves_camelcase_like_ios(self):
+        # 'iOS' at sentence start must NOT become 'IOS'.
+        out = compress.compress("Fix the bug. iOS users are affected.")
+        assert "iOS" in out, f"camelCase identifier broken: {out!r}"
+
+    def test_idempotent(self):
+        first = compress.compress("Please fix foo.py. please also lint it.")
+        second = compress.compress(first)
+        assert first == second

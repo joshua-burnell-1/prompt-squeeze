@@ -142,6 +142,45 @@ def _swap_verbose(text: str) -> str:
     return text
 
 
+def _capitalize_sentences(text: str) -> str:
+    """Capitalize the first letter of the text and the first letter of any sentence
+    that follows a sentence-ending punctuation mark. Runs after filler removal so
+    we catch newly-exposed sentence heads (the v0.3 'please update foo.py' regression).
+
+    The lookahead guards camelCase identifiers like 'iOS' or 'iPhone' — we only
+    capitalize a lowercase letter if the next character is also lowercase, whitespace,
+    or sentence punctuation. A lowercase letter followed by uppercase (i+O in iOS)
+    is left alone."""
+    if not text:
+        return text
+
+    def _capitalize_first(s: str) -> str:
+        for i, ch in enumerate(s):
+            if ch.isspace():
+                continue
+            if ch.isalpha() and ch.islower():
+                # Same camelCase guard as the sentence-boundary pass.
+                if i + 1 < len(s) and s[i + 1].isalpha() and s[i + 1].isupper():
+                    return s
+                return s[:i] + ch.upper() + s[i + 1:]
+            return s
+        return s
+
+    text = _capitalize_first(text)
+
+    def _cap_after_terminator(match: re.Match[str]) -> str:
+        return match.group(1) + match.group(2).upper()
+
+    # Only capitalize lowercase letter if followed by lowercase/space/punct (not uppercase).
+    # This preserves camelCase identifiers like 'iOS' at sentence start.
+    text = re.sub(
+        r"([.!?]\s+)([a-z])(?=[a-z\s.,;:'\-]|$)",
+        _cap_after_terminator,
+        text,
+    )
+    return text
+
+
 def _normalize_whitespace(text: str) -> str:
     # Strip trailing whitespace per line.
     text = re.sub(r"[ \t]+\n", "\n", text)
@@ -164,6 +203,7 @@ def compress(text: str) -> str:
     body = _strip_filler(body)
     body = _swap_verbose(body)
     body = _cleanup_artifacts(body)
+    body = _capitalize_sentences(body)
     body = _normalize_whitespace(body)
     return _restore_protected(body, protected)
 
