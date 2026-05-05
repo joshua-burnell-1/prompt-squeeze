@@ -9,6 +9,8 @@ import re
 import sys
 from collections.abc import Callable
 
+from rules import DEFAULT_REGISTRY, apply_all
+
 # Token counting note: tiktoken's cl100k_base is the OpenAI BPE encoding.
 # Anthropic does not publish their tokenizer; cl100k is the closest public
 # approximation and is used here only for ratio reporting, not billing.
@@ -17,48 +19,6 @@ try:
     _ENC = tiktoken.get_encoding("cl100k_base")
 except Exception:
     _ENC = None
-
-
-_FILLER_PHRASES = [
-    r"\bi was wondering if you could\b",
-    r"\bi was wondering if\b",
-    r"\bi was wondering\b",
-    r"\bi think it would be great if\b",
-    r"\bif you don'?t mind\b",
-    # "thanks in advance" with optional "for ..." tail and trailing "!" — must precede plain "thanks"
-    r"\bthanks in advance(?:\s+for[^.!?]*)?[!]*",
-    r"\bthank you (?:so much|very much)(?:\s+in advance)?(?:\s+for[^.!?]*)?[!]*",
-    r"\bthank you(?:\s+in advance)?(?:\s+for[^.!?]*)?[!]*",
-    r"\bthanks(?:\s+for[^.!?]*)?[!]*",
-    r"\bi really appreciate it[!.?]*",
-    r"\bplease\b",
-    r"\bcould you please\b",
-    r"\bcould you\b",
-    r"\bwould you mind\b",
-    r"\bwould you\b",
-    r"\bcan you please\b",
-    r"\bcan you\b",
-]
-
-_VERBOSE_SWAPS = [
-    (r"\bin order to\b", "to"),
-    (r"\bat this point in time\b", "now"),
-    (r"\bdue to the fact that\b", "because"),
-    (r"\bfor the purpose of\b", "to"),
-    (r"\bin the event that\b", "if"),
-    (r"\bwith regard to\b", "about"),
-    (r"\bwith regards to\b", "about"),
-    (r"\bmake a decision\b", "decide"),
-    (r"\bgive consideration to\b", "consider"),
-]
-
-# Greeting at start-of-text or right after sentence-ending punctuation. Captures the
-# preceding boundary so the substitution can preserve it (we don't want to swallow the
-# previous sentence's period). Mid-prose "hi" (e.g., "she said hi to him") is left alone.
-_GREETING_RE = re.compile(
-    r"(^|(?<=[.!?]))\s*\b(?:hi|hello|hey)\b(?:\s+(?:there|everyone|folks|all|y'all|team))?[,!]*\s*",
-    flags=re.IGNORECASE,
-)
 
 
 _FENCED_CODE_RE = re.compile(r"```.*?```", re.DOTALL)
@@ -103,24 +63,6 @@ def _restore_protected(text: str, protected: list[str]) -> str:
     return text
 
 
-def _strip_greetings(text: str) -> str:
-    def _replace(match: re.Match[str]) -> str:
-        # group(1) is the boundary: either "" (start of text) or the punctuation char
-        # the lookbehind already saw. Replace with that boundary + a single space so
-        # the next sentence starts cleanly.
-        prefix = match.group(1)
-        return (prefix + " ") if prefix else ""
-
-    return _GREETING_RE.sub(_replace, text)
-
-
-def _strip_filler(text: str) -> str:
-    text = _strip_greetings(text)
-    for pattern in _FILLER_PHRASES:
-        text = re.sub(pattern, "", text, flags=re.IGNORECASE)
-    return text
-
-
 def _cleanup_artifacts(text: str) -> str:
     """Tidy up wreckage left by phrase removal — stranded punctuation, doubled
     sentence-end markers, orphan tokens between sentences. Runs after stripping
@@ -136,9 +78,42 @@ def _cleanup_artifacts(text: str) -> str:
     return text
 
 
-def _swap_verbose(text: str) -> str:
-    for pattern, repl in _VERBOSE_SWAPS:
-        text = re.sub(pattern, repl, text, flags=re.IGNORECASE)
+def _capitalize_sentences(text: str) -> str:
+    """Capitalize the first letter of the text and the first letter of any sentence
+    that follows a sentence-ending punctuation mark. Runs after filler removal so
+    we catch newly-exposed sentence heads (the v0.3 'please update foo.py' regression).
+
+    The lookahead guards camelCase identifiers like 'iOS' or 'iPhone' — we only
+    capitalize a lowercase letter if the next character is also lowercase, whitespace,
+    or sentence punctuation. A lowercase letter followed by uppercase (i+O in iOS)
+    is left alone."""
+    if not text:
+        return text
+
+    def _capitalize_first(s: str) -> str:
+        for i, ch in enumerate(s):
+            if ch.isspace():
+                continue
+            if ch.isalpha() and ch.islower():
+                # Same camelCase guard as the sentence-boundary pass.
+                if i + 1 < len(s) and s[i + 1].isalpha() and s[i + 1].isupper():
+                    return s
+                return s[:i] + ch.upper() + s[i + 1:]
+            return s
+        return s
+
+    text = _capitalize_first(text)
+
+    def _cap_after_terminator(match: re.Match[str]) -> str:
+        return match.group(1) + match.group(2).upper()
+
+    # Only capitalize lowercase letter if followed by lowercase/space/punct (not uppercase).
+    # This preserves camelCase identifiers like 'iOS' at sentence start.
+    text = re.sub(
+        r"([.!?]\s+)([a-z])(?=[a-z\s.,;:'\-]|$)",
+        _cap_after_terminator,
+        text,
+    )
     return text
 
 
@@ -158,14 +133,33 @@ def _normalize_whitespace(text: str) -> str:
 
 def compress(text: str) -> str:
     """Run the full Stage 1 deterministic compression pipeline."""
+    return compress_with_hits(text)[0]
+
+
+def compress_with_hits(text: str):
+    """Compress text and return (compressed_text, hits_list).
+
+    Each hit is a dict: {rule_id, span, removed, replacement}. Hits are surfaced
+    to the prompt-squeeze hook for /sq explain rule-attribution rendering."""
     if not text:
-        return text
+        return text, []
     body, protected = _extract_protected(text)
-    body = _strip_filler(body)
-    body = _swap_verbose(body)
+    body, hits = apply_all(DEFAULT_REGISTRY, body)
     body = _cleanup_artifacts(body)
+    body = _capitalize_sentences(body)
     body = _normalize_whitespace(body)
-    return _restore_protected(body, protected)
+    final = _restore_protected(body, protected)
+    # Convert dataclass Hit instances to plain dicts for JSON-friendly handoff.
+    hit_dicts = [
+        {
+            "rule_id": h.rule_id,
+            "span": list(h.span),
+            "removed": h.removed,
+            "replacement": h.replacement,
+        }
+        for h in hits
+    ]
+    return final, hit_dicts
 
 
 def _count_tokens_default(text: str) -> int:

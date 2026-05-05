@@ -1,0 +1,402 @@
+{
+  "code_fix_01": {
+    "fidelity": 0.95,
+    "reason": "All task-critical identifiers preserved (file path, line number, error type, version); only pleasantries removed."
+  },
+  "code_fix_02": {
+    "fidelity": 0.85,
+    "reason": "All task-critical identifiers and error strings are preserved, but removal of framing phrases causes minor grammatical incoherence ('so much in advance') without meaningful semantic loss."
+  },
+  "code_fix_03": {
+    "fidelity": 0.97,
+    "reason": "All task-relevant content preserved: version number, error string, and task verb intact; only pleasantries removed."
+  },
+  "code_fix_04": {
+    "fidelity": 0.97,
+    "reason": "All task-relevant content preserved \u2014 file path, line number, error string, and trigger condition intact; only politeness filler removed."
+  },
+  "code_fix_05": {
+    "fidelity": 0.95,
+    "reason": "All task-critical elements preserved (file path, error class, timing, fix intent); minor loss of 'in advance' framing is irrelevant."
+  },
+  "explain_01": {
+    "fidelity": 0.95,
+    "reason": "All task-relevant intent preserved; only courtesy phrases removed with no loss of technical constraints or identifiers."
+  },
+  "explain_02": {
+    "fidelity": 0.95,
+    "reason": "All task-relevant intent is preserved; only polite framing was removed, which has no bearing on the task."
+  },
+  "explain_03": {
+    "fidelity": 0.72,
+    "reason": "Core topic preserved but 'for the purpose of' intent connector is mangled to 'to', losing grammatical clarity, and the polite framing is stripped which is irrelevant but the structural distortion of the request slightly weakens specificity."
+  },
+  "explain_04": {
+    "fidelity": 0.85,
+    "reason": "Core intent and technical scope preserved, but 'with regard to' was mangled into 'about it about' and polite framing stripped, which is acceptable loss."
+  },
+  "explain_05": {
+    "fidelity": 0.85,
+    "reason": "Core task and subject preserved, but loses the closing 'Thanks' (minor) and awkwardly truncates to 'so much in advance!' suggesting a dropped word, though no file paths, identifiers, or critical constraints were lost."
+  },
+  "refactor_01": {
+    "fidelity": 0.97,
+    "reason": "All task-critical constraints preserved: function signature, fractional seconds, timezone handling, and the dateutil exclusion; only dropped inconsequential pleasantries."
+  },
+  "refactor_02": {
+    "fidelity": 0.97,
+    "reason": "All task-relevant intent, function signature, and constraints preserved; only pleasantries removed."
+  },
+  "refactor_03": {
+    "fidelity": 1.0,
+    "reason": "All task-relevant intent, file path, and constraints are preserved; only pleasantries were removed."
+  },
+  "refactor_04": {
+    "fidelity": 0.97,
+    "reason": "All task-critical identifiers, parameters, error type, and intent are preserved; only social pleasantries were removed."
+  },
+  "refactor_05": {
+    "fidelity": 0.95,
+    "reason": "All task-relevant content preserved \u2014 file path, line range, task verb, and constraint intact; only politeness phrases removed."
+  },
+  "multi_turn_starter_01": {
+    "fidelity": 0.85,
+    "reason": "Core task, framework, file path, and token destination are preserved, but removal of 'Hi!' and 'Thanks' is fine while 'if you could please' \u2192 dropped softens the request without losing task intent; minor phrasing losses only."
+  },
+  "multi_turn_starter_02": {
+    "fidelity": 0.98,
+    "reason": "All task-relevant content preserved; only removed social pleasantries with no bearing on the technical request."
+  },
+  "multi_turn_starter_03": {
+    "fidelity": 0.92,
+    "reason": "All task-critical details preserved (Next.js 14, Vercel, exact error string, debug intent); minor loss of politeness framing only."
+  },
+  "multi_turn_starter_04": {
+    "fidelity": 0.85,
+    "reason": "Core task and all technical specifics preserved, but loss of explicit 'Hi', 'Could you please give consideration to', and 'Thanks' reduces the polite framing without affecting task intent."
+  },
+  "multi_turn_starter_05": {
+    "fidelity": 0.97,
+    "reason": "All task-critical elements preserved \u2014 repo path, file path, and all three cargo commands \u2014 only pleasantries removed."
+  },
+  "code_fix_06": {
+    "fidelity": 0.97,
+    "reason": "All critical identifiers preserved \u2014 file path, line number, error string, status code, and version numbers intact; only polite framing removed."
+  },
+  "code_fix_07": {
+    "fidelity": 0.92,
+    "reason": "All critical identifiers preserved (file path, line number, error string, version numbers); minor loss of task verb framing ('please diagnose' \u2192 'diagnose this?') and dropped 'I think it would be great if' hedge, but core intent intact."
+  },
+  "code_fix_08": {
+    "fidelity": 0.97,
+    "reason": "All task-critical details preserved: file path, line number, error string, version number, and request verb; only pleasantries removed."
+  },
+  "code_fix_09": {
+    "fidelity": 0.97,
+    "reason": "All task-critical identifiers preserved (file path, line number, error string, version numbers, service context); only pleasantries removed."
+  },
+  "code_fix_10": {
+    "fidelity": 1.0,
+    "reason": "All task-relevant content preserved: error class, exact error string, middleware name, Flask version, and file path with line number."
+  },
+  "code_fix_11": {
+    "fidelity": 0.97,
+    "reason": "All critical identifiers preserved (error string, file path, line number, version pin, task verb); only minor pleasantries removed."
+  },
+  "code_fix_12": {
+    "fidelity": 0.82,
+    "reason": "All critical identifiers preserved (file path, line number, class/method, error string, cold cache condition), but the task verb 'review' is weakened by dropping the imperative structure and 'trace back what changed' loses its directive force."
+  },
+  "code_fix_13": {
+    "fidelity": 0.97,
+    "reason": "All technical identifiers preserved; only polite filler words removed with no loss of task intent or constraints."
+  },
+  "code_fix_14": {
+    "fidelity": 0.97,
+    "reason": "All task-relevant identifiers, error string, file path, version, and intent are preserved; only pleasantries were removed."
+  },
+  "code_fix_15": {
+    "fidelity": 0.97,
+    "reason": "All task-critical identifiers (exception class, file path, line number, load threshold, Python version) and task verbs (trace, suggest, backpressure fix) are preserved; only pleasantries were stripped."
+  },
+  "code_fix_16": {
+    "fidelity": 0.97,
+    "reason": "All task-critical identifiers, file paths, error strings, version numbers, and both explicit questions are preserved; only polite filler phrases were removed."
+  },
+  "code_fix_17": {
+    "fidelity": 0.97,
+    "reason": "All task-critical identifiers, file paths, version numbers, error strings, and task verbs are preserved; only polite framing and minor connective phrases were removed."
+  },
+  "code_fix_18": {
+    "fidelity": 0.97,
+    "reason": "All technical identifiers, file paths, error strings, version numbers, and task verbs are preserved; only politeness phrases were trimmed."
+  },
+  "code_fix_19": {
+    "fidelity": 0.98,
+    "reason": "All task-critical details preserved including versions, error string, file path, and line number; only minor pleasantries removed."
+  },
+  "code_fix_20": {
+    "fidelity": 0.97,
+    "reason": "All task-critical details preserved \u2014 versions, file path, error string, and core question intact; only polite framing removed."
+  },
+  "code_fix_21": {
+    "fidelity": 0.97,
+    "reason": "All task-critical elements preserved \u2014 file path, line number, CRLF cause, error string, and task verb; only pleasantries removed."
+  },
+  "code_fix_22": {
+    "fidelity": 1.0,
+    "reason": "All task-relevant identifiers preserved: version number, exact error string, file path with line number, and TypeVar bound context."
+  },
+  "code_fix_23": {
+    "fidelity": 0.97,
+    "reason": "All critical identifiers preserved (file path, line number, exact error string, version number, env var reference); only informal pleasantries removed."
+  },
+  "code_fix_24": {
+    "fidelity": 0.97,
+    "reason": "All task-critical details preserved (pytest version, file path, error string, src-layout context, pip install -e condition); only pleasantries removed and a minor spacing artifact introduced ('pip install -e.' missing space)."
+  },
+  "code_fix_25": {
+    "fidelity": 0.97,
+    "reason": "All task-critical details preserved \u2014 file path, error string, version, size threshold, and expected behavior; only polite framing removed."
+  },
+  "explain_06": {
+    "fidelity": 0.97,
+    "reason": "All task-relevant intent, constraints, and version numbers are preserved; only conversational pleasantries were removed."
+  },
+  "explain_07": {
+    "fidelity": 0.95,
+    "reason": "All task-relevant content preserved; only politeness phrases removed with no loss of technical intent, constraints, or identifiers."
+  },
+  "explain_08": {
+    "fidelity": 0.97,
+    "reason": "All task-relevant intent and constraints preserved; only removed conversational politeness markers ('Hey', 'please', 'Thanks!') which carry no task information."
+  },
+  "explain_09": {
+    "fidelity": 0.85,
+    "reason": "All technical content is preserved but minor phrasing loss ('with regards to' \u2192 'about') slightly weakens the relational framing; no identifiers or task verbs lost."
+  },
+  "explain_10": {
+    "fidelity": 1.0,
+    "reason": "All task-relevant intent and constraints are preserved; only social filler words were removed."
+  },
+  "explain_11": {
+    "fidelity": 0.97,
+    "reason": "All task-relevant intent, constraints, and verbs are preserved; only polite filler phrases were removed."
+  },
+  "explain_12": {
+    "fidelity": 0.97,
+    "reason": "All task-relevant content preserved; only removed polite phrasing with no semantic loss."
+  },
+  "explain_13": {
+    "fidelity": 0.85,
+    "reason": "Core intent preserved but 'with regards to' became 'about' (weaker framing) and politeness markers removed, which are stylistically minor but the technical scope is intact."
+  },
+  "explain_14": {
+    "fidelity": 0.97,
+    "reason": "All task-relevant content preserved; only polite framing ('Hey, could you please', 'Thanks!') removed, which carries no task intent."
+  },
+  "explain_15": {
+    "fidelity": 0.95,
+    "reason": "All task-relevant intent, constraints, and technical identifiers are preserved; only polite framing was removed."
+  },
+  "explain_16": {
+    "fidelity": 0.97,
+    "reason": "All task-critical details, identifiers, version numbers, and constraints are preserved; only polite framing and minor connective phrases were removed."
+  },
+  "explain_17": {
+    "fidelity": 0.97,
+    "reason": "All task-relevant topics, version numbers, technical terms, and constraints are preserved; only polite filler phrases were removed with one minor phrasing awkwardness ('you covered' vs 'covering', 'about' vs 'with regards to')."
+  },
+  "explain_18": {
+    "fidelity": 0.97,
+    "reason": "All task-relevant intent, constraints, identifiers, query patterns, and technical specifics are preserved; only polite filler phrases were removed."
+  },
+  "explain_19": {
+    "fidelity": 0.92,
+    "reason": "All technical topics, identifiers, and task verbs are preserved; minor losses include the framing context ('For the purpose of') and slight grammatical degradation ('you walked through' vs 'walked through each'), but no task-critical content is dropped."
+  },
+  "explain_20": {
+    "fidelity": 0.97,
+    "reason": "All task-relevant concepts, version number, and technical identifiers are preserved; only polite filler words were removed."
+  },
+  "explain_21": {
+    "fidelity": 0.95,
+    "reason": "All task-relevant intent and constraints preserved; only removed social filler with no semantic loss."
+  },
+  "explain_22": {
+    "fidelity": 0.97,
+    "reason": "All task-relevant intent, constraints, and identifiers are preserved; only removed filler words like 'Hey', 'could you please', and 'Thanks' which carry no semantic weight."
+  },
+  "explain_23": {
+    "fidelity": 0.95,
+    "reason": "All task-relevant content preserved \u2014 version numbers, topic, and LazyFrame reference intact; only dropped polite filler with no semantic loss."
+  },
+  "explain_24": {
+    "fidelity": 0.95,
+    "reason": "All task-relevant content preserved; only courtesy phrases removed with no loss of constraints or identifiers."
+  },
+  "explain_25": {
+    "fidelity": 0.97,
+    "reason": "All task-relevant intent, constraints, and identifiers are preserved; only polite filler phrases were removed."
+  },
+  "refactor_06": {
+    "fidelity": 1.0,
+    "reason": "All task-relevant content is preserved: function signature, encoding name, and the langchain exclusion constraint."
+  },
+  "refactor_07": {
+    "fidelity": 1.0,
+    "reason": "All task-relevant content is preserved: file paths, version number, task verbs, and constraint are fully intact."
+  },
+  "refactor_08": {
+    "fidelity": 0.97,
+    "reason": "All task-relevant constraints preserved; minor loss of polite framing has no effect on task intent."
+  },
+  "refactor_09": {
+    "fidelity": 0.97,
+    "reason": "All task-critical identifiers, version numbers, file path, and constraints are preserved; only polite filler words were removed."
+  },
+  "refactor_10": {
+    "fidelity": 0.97,
+    "reason": "All task-critical elements preserved \u2014 function signature, decorator requirement, thread-safety constraint, and package exclusion \u2014 only polite framing removed."
+  },
+  "refactor_11": {
+    "fidelity": 0.97,
+    "reason": "All task-critical elements preserved \u2014 function name, code, file path arg, and refactor intent intact; only pleasantries removed."
+  },
+  "refactor_12": {
+    "fidelity": 0.97,
+    "reason": "All task-critical elements preserved: class name, language version, all three method names, and the stdlib-only constraint; only pleasantries removed."
+  },
+  "refactor_13": {
+    "fidelity": 1.0,
+    "reason": "All task-relevant intent, file path, framework version, syntax target, and constraints are fully preserved."
+  },
+  "refactor_14": {
+    "fidelity": 0.97,
+    "reason": "All task-relevant intent, function signature, constraints, and testability requirement preserved; only polite framing removed."
+  },
+  "refactor_15": {
+    "fidelity": 0.97,
+    "reason": "All task-relevant intent, constraints, and code are preserved; only stripped pleasantries ('Hey, could you please' and 'Thanks!') which carry no task information."
+  },
+  "refactor_16": {
+    "fidelity": 0.97,
+    "reason": "All file paths, version numbers, constraints, method names, and task verbs are preserved; only polite framing was removed with no loss of task-relevant intent."
+  },
+  "refactor_17": {
+    "fidelity": 0.97,
+    "reason": "All task-critical details preserved including file paths, version numbers, method signatures, and constraints; only minor polite phrasing removed with no loss of intent."
+  },
+  "refactor_18": {
+    "fidelity": 0.95,
+    "reason": "All file paths, function signature, parameter defaults, version numbers, and constraints are preserved; the only loss is 'For the purpose of testing' mangled to 'to testing', which slightly obscures but does not drop the sleep-injectable requirement."
+  },
+  "refactor_19": {
+    "fidelity": 0.97,
+    "reason": "All task-critical details preserved including file paths, version numbers, selectors, constraints, and test references; only minor conversational phrasing removed with no loss of intent."
+  },
+  "refactor_20": {
+    "fidelity": 0.93,
+    "reason": "All constraints, identifiers, version numbers, and task verbs are preserved, but minor wording degradations ('if the path ends with.gz' missing space, 'For the purpose of debugging' mangled to 'to debugging') could cause ambiguity."
+  },
+  "refactor_21": {
+    "fidelity": 1.0,
+    "reason": "All task-relevant content is preserved: function signature, return type, strict ValueError requirement, and no constraints or identifiers were lost."
+  },
+  "refactor_22": {
+    "fidelity": 0.85,
+    "reason": "File paths and CLI flags are preserved, but 'preserved' should be 'preserve' (imperative lost), and the compressed version reads as a statement rather than a command, weakening the task verb clarity."
+  },
+  "refactor_23": {
+    "fidelity": 0.95,
+    "reason": "All task-relevant intent, constraints, and identifiers are preserved; only pleasantries were dropped."
+  },
+  "refactor_24": {
+    "fidelity": 0.97,
+    "reason": "All task-critical details preserved \u2014 file path, version number, JSON output requirement, and entry point constraint; only dropped pleasantries."
+  },
+  "refactor_25": {
+    "fidelity": 0.97,
+    "reason": "All task-critical identifiers, file paths, version numbers, and constraints are preserved; only polite framing was dropped."
+  },
+  "multi_turn_starter_06": {
+    "fidelity": 0.85,
+    "reason": "Core task, constraints, and identifiers are preserved but the removal of polite framing is minor; however 'with regards to' vs 'about' and 'at this point in time' vs 'now' are acceptable paraphrases with no meaningful loss."
+  },
+  "multi_turn_starter_07": {
+    "fidelity": 0.97,
+    "reason": "All task-critical identifiers, version numbers, and technical constraints are preserved; only polite framing was removed."
+  },
+  "multi_turn_starter_08": {
+    "fidelity": 0.97,
+    "reason": "All task-relevant constraints preserved; only removed social pleasantries with no semantic loss."
+  },
+  "multi_turn_starter_09": {
+    "fidelity": 0.85,
+    "reason": "All version numbers, library names, and core task preserved, but tone shifts and 'with regards to' \u2192 'about' slightly weakens the specificity of the connection lifecycle framing."
+  },
+  "multi_turn_starter_10": {
+    "fidelity": 1.0,
+    "reason": "All task-relevant intent, version numbers, and plugin constraints are preserved; only social filler was removed."
+  },
+  "multi_turn_starter_11": {
+    "fidelity": 0.93,
+    "reason": "All version numbers, metrics, evaluation criteria, and task verbs are preserved; only minor polite framing is dropped, with a slightly garbled closing ('to an architecture doc, end with a recommendation?') that weakens clarity but does not lose intent."
+  },
+  "multi_turn_starter_12": {
+    "fidelity": 0.97,
+    "reason": "All technical constraints, version numbers, identifiers, and task verbs are preserved; only politeness phrases and 'For the purpose of' are removed with negligible intent loss."
+  },
+  "multi_turn_starter_13": {
+    "fidelity": 0.97,
+    "reason": "All task-critical details preserved (model names, file paths, rubric dimensions, cost math, tool options); only minor politeness phrases and 'For the purpose of' dropped, with 'to containing cost' being a slight grammatical artifact but intent intact."
+  },
+  "multi_turn_starter_14": {
+    "fidelity": 0.88,
+    "reason": "All version numbers, technical identifiers, and task verbs are preserved, but the closing framing is garbled ('to a tech-design doc, conclude with a recommendation?' loses the 'For the purpose of' scoping clause and becomes syntactically broken)."
+  },
+  "multi_turn_starter_15": {
+    "fidelity": 0.93,
+    "reason": "All task-relevant constraints, identifiers, tool names, and requirements are preserved; minor losses are only politeness phrases and 'For the purpose of' framing, with no substantive content dropped."
+  },
+  "multi_turn_starter_16": {
+    "fidelity": 0.97,
+    "reason": "All task-relevant constraints, version numbers, and comparison axes are preserved; only polite filler phrases were removed."
+  },
+  "multi_turn_starter_17": {
+    "fidelity": 0.85,
+    "reason": "All task-relevant content preserved (version, URL, goal, import request) but minor loss of phrasing clarity ('you walked me through' lacks 'I think it would be great if') makes the compressed version slightly awkward without meaningful token savings on key constraints."
+  },
+  "multi_turn_starter_18": {
+    "fidelity": 0.97,
+    "reason": "All task-critical identifiers preserved (Python 3.12, widgetlib, setuptools-scm 8.1.0, .github/workflows/release.yml); only pleasantries removed."
+  },
+  "multi_turn_starter_19": {
+    "fidelity": 0.97,
+    "reason": "All task-relevant intent, version numbers, library names, and constraints preserved; only dropped courtesy phrases with no semantic content."
+  },
+  "multi_turn_starter_20": {
+    "fidelity": 0.92,
+    "reason": "All technical identifiers preserved (FastAPI 0.111.0, Redis 7.2, Cloudflare) and task verbs intact; minor loss of polite framing has no semantic impact on task intent."
+  },
+  "multi_turn_starter_21": {
+    "fidelity": 0.97,
+    "reason": "All version numbers, tool names, and task intent preserved; only pleasantries removed."
+  },
+  "multi_turn_starter_22": {
+    "fidelity": 0.97,
+    "reason": "All task-critical identifiers (Webpack 5, Vite 5.3.0, React 18, 600 modules, codemods, dev-server differences) are preserved; only pleasantries removed."
+  },
+  "multi_turn_starter_23": {
+    "fidelity": 0.97,
+    "reason": "All task-critical identifiers and verbs preserved; only dropped conversational politeness markers with no semantic loss."
+  },
+  "multi_turn_starter_24": {
+    "fidelity": 0.97,
+    "reason": "All task-relevant constraints preserved (endpoint path, version numbers, libraries); only stripped pleasantries with no semantic loss."
+  },
+  "multi_turn_starter_25": {
+    "fidelity": 0.97,
+    "reason": "All version numbers, tech identifiers, and task verbs preserved; only dropped pleasantries with no semantic content."
+  }
+}

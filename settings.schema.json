@@ -5,13 +5,35 @@
   "properties": {
     "prompt-squeeze.mode": {
       "type": "string",
-      "enum": ["off", "measure", "advise", "replace"],
-      "default": "advise"
+      "enum": ["off", "measure", "advise", "interactive", "replace"],
+      "default": "interactive",
+      "description": "off: hook disabled. advise: nudge Claude to /squeeze (v0.3 behavior). interactive: block prompts above block_threshold and offer /sq y (v0.4 default). measure: log only. replace: reserved for native prompt rewrite when Anthropic ships #27365."
     },
-    "prompt-squeeze.warn_threshold": { "type": "integer", "minimum": 0, "default": 800 },
+    "prompt-squeeze.block_threshold": {
+      "type": "integer",
+      "minimum": 0,
+      "default": 500,
+      "description": "v0.4: prompts above this token count are blocked in interactive mode. Default 500."
+    },
+    "prompt-squeeze.warn_threshold": {
+      "type": "integer",
+      "minimum": 0,
+      "default": 800,
+      "description": "Legacy v0.3 advise-mode threshold. Honored when mode == 'advise'."
+    },
     "prompt-squeeze.notify_threshold": { "type": "number", "minimum": 0, "maximum": 1, "default": 0.25 },
     "prompt-squeeze.hard_limit": { "type": "integer", "minimum": 0, "default": 4000 },
-    "prompt-squeeze.interactive": { "type": "boolean", "default": false },
+    "prompt-squeeze.interactive": {
+      "type": "boolean",
+      "default": false,
+      "description": "Legacy v0.3 setting. Folded into mode='interactive' in v0.4 — ignored when mode is set."
+    },
+    "prompt-squeeze.explain": {
+      "type": "string",
+      "enum": ["off", "on"],
+      "default": "off",
+      "description": "When 'on', the hook stores per-squeeze explain artifacts at ~/.claude/prompt-squeeze/explain/. Required for /sq explain and /sq undo. Off by default — explicit opt-in."
+    },
     "prompt-squeeze.model_override": { "type": ["string", "null"], "default": null },
     "prompt-squeeze.telemetry": { "type": "string", "enum": ["local", "team", "off"], "default": "local" },
     "prompt-squeeze.team_endpoint": { "type": ["string", "null"], "default": null }

@@ -33,6 +33,29 @@ uv run python skills/prompt-squeeze/scripts/eval/run_eval.py --judge --judge-sam
 uv run python skills/prompt-squeeze/scripts/eval/run_eval.py --judge --judge-backend cli --judge-sample 20
 ```
 
+## Eval gate (v0.4)
+
+Compression-rule changes must keep the 100-prompt eval contract:
+
+- **Median fidelity ≥ 0.95** (Claude-as-judge score)
+- **5th-percentile fidelity must not regress more than 0.03 from the v0.3 baseline** (relative gate; the baseline contains intrinsically low-fidelity prompts that no rule change can rescue)
+- **No individual prompt regresses more than 0.05 from its baseline fidelity** (per-prompt relative gate, compared against `skills/prompt-squeeze/data/baseline_fidelity.json`)
+
+CI runs the full `--judge` gate automatically when `ANTHROPIC_API_KEY` is configured as a repository secret. PRs from forks skip the judge step (no key access); maintainers should run the gate locally before merging.
+
+Local check (uses your Claude Code subscription, no API key needed):
+
+```bash
+uv run python skills/prompt-squeeze/scripts/eval/run_eval.py --judge --judge-backend cli
+```
+
+When adding a new compression rule:
+
+1. Add the rule with a stable `id` to `skills/prompt-squeeze/scripts/rules.py`
+2. Add unit tests covering positive cases, edge cases, and any context-gate behavior
+3. Run the eval gate locally — if median fidelity drops, the rule needs a tighter context gate or should be removed
+4. The eval **is** the contract — there's no manual override
+
 ## Code conventions
 
 - New files start with a 2-line `ABOUTME:` comment block describing what the file does.
@@ -60,7 +83,7 @@ git tag -a vX.Y.Z -m "release notes"
 git push origin vX.Y.Z
 ```
 
-Then bump the `version` field in `joshua-burnell-1/claude-plugins/.claude-plugin/marketplace.json` and the plugin's own `.claude-plugin/plugin.json`.
+Then bump the `version` field in `.claude-plugin/plugin.json` and `pyproject.toml`. Marketplace listing is pending approval; once live, the marketplace pin will need to be bumped separately.
 
 ## License
 
